@@ -86,14 +86,15 @@ func main() {
 	// 进程退出时关闭所有外部数据源连接
 	defer datasourceService.CloseAll()
 	datasetService := service.NewDatasetService(datasetRepo, datasourceService, cfg.SQLQueryTimeout)
-	dashboardService := service.NewDashboardService(dashboardRepo, datasetRepo, datasetService)
+	// 下钻服务在看板服务之前创建：看板指标趋势在没有日期列时会回退到组织范围趋势
+	drillService := service.NewDrillService(orgRepo, targetRepo, drillRepo, scopeService)
+	dashboardService := service.NewDashboardService(dashboardRepo, datasetRepo, datasetService, drillService)
 	dashboardPrefService := service.NewDashboardPreferenceService(dashboardPrefRepo, dashboardRepo)
 	templateService := service.NewTemplateService(templateRepo, dashboardRepo)
 	shareService := service.NewShareService(shareRepo, dashboardRepo, cfg)
 	sender := channel.NewSender(cfg.AllowMockPush)
 	pushService := service.NewPushService(pushRepo, userRepo, roleRepo, orgRepo, dashboardRepo, scopeService, shareService, sender)
 	targetService := service.NewTargetService(targetRepo, orgRepo)
-	drillService := service.NewDrillService(orgRepo, targetRepo, drillRepo, scopeService)
 
 	// 5. 初始化 HTTP 处理器
 	authHandler := handler.NewAuthHandler(authService)

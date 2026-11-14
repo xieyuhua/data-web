@@ -113,6 +113,37 @@ func (s *DrillService) TrendScoped(scope DataScope, ownOrgID, nodeID uint64, nod
 		}
 	}
 
+	fillTrendPoints(result, rows, start, end)
+	return result, nil
+}
+
+// ScopeTrend 按「一组组织」汇总指标趋势，不要求指定具体节点。
+// 看板指标卡在当前登录人的组织范围内查看趋势时复用该方法，避免重复实现按日聚合。
+func (s *DrillService) ScopeTrend(orgIDs []uint64, metric, startDate, endDate string) (*DrillTrend, error) {
+	start, end, err := normalizeTrendRange(startDate, endDate)
+	if err != nil {
+		return nil, err
+	}
+	metricDef := findMetric(metric)
+	if metricDef == nil {
+		metricDef = findMetric("revenue")
+	}
+	rows, err := s.repo.SalesDailyByOrg(orgIDs, start.Format("2006-01-02"), end.Format("2006-01-02"), metricDef.Expr)
+	if err != nil {
+		return nil, err
+	}
+	result := &DrillTrend{
+		Name: "当前数据范围", Type: "org",
+		Metric: metricDef.Key, MetricLabel: metricDef.Label, Unit: metricDef.Unit,
+		StartDate: start.Format("2006-01-02"), EndDate: end.Format("2006-01-02"),
+	}
+	fillTrendPoints(result, rows, start, end)
+	return result, nil
+}
+
+// fillTrendPoints 把按日聚合结果补齐为连续日期序列，并计算合计 / 日均 / 峰值。
+// 缺失日期补 0，保证折线图 X 轴连续，避免节假日断档造成误读。
+func fillTrendPoints(result *DrillTrend, rows []repository.DailyAggregate, start, end time.Time) {
 	rowMap := make(map[string]repository.DailyAggregate, len(rows))
 	for _, row := range rows {
 		rowMap[row.StatDate] = row
@@ -138,7 +169,6 @@ func (s *DrillService) TrendScoped(scope DataScope, ownOrgID, nodeID uint64, nod
 	if len(points) > 0 {
 		result.Average = round2(result.Total / float64(len(points)))
 	}
-	return result, nil
 }
 
 func normalizeTrendRange(startDate, endDate string) (time.Time, time.Time, error) {

@@ -21,6 +21,7 @@
 - **BI 看板**：KPI 卡、折线、柱状、饼/环图、明细表格；12 栅格布局；草稿 / 发布；复制；按权限范围实时查询。
 - **个人工作台**：看板支持收藏、置顶与最近浏览记录，首页可按「默认 / 最近浏览 / 最近更新 / 访问最多 / 名称」排序并一键筛选「我的收藏」，偏好按账号持久化，多端登录一致。
 - **分析体验**：组件表格 / 图表一键切换（默认 1 行数据用表格、多行数据用图表，可在编辑器里固定默认视图）、图表按指标排序与 Top N、整份看板导出 Excel（每个组件一个工作表）、单组件 CSV 导出、明细表排序 / 分页 / 当前表导出、看板与分享页全屏、本月 / 上月快捷区间；多组件并发查询。
+- **指标趋势**：点击 KPI 数字或组件右上角趋势按钮，即可查看该指标最近 7 / 30 / 90 天或自定义区间的按日走势，含区间合计（比率型指标为区间均值）、日均、最低 / 峰值与数据来源；数据集自带日期列时按数据集聚合，否则按组织范围回退到销售事实，权限口径与看板一致。分享页同样可用。
 - **全局筛选器**：单选 / 多选 / 日期 / 文本四类看板级筛选器，SQL 用 `{{filter:key}}`、`{{filter_in:key}}`、`{{filter_has:key}}` 注入；筛选值服务端白名单校验 + 字面量转义，支持「不在分享页显示」与 URL 持久化。
 - **数字阅读**：数字统一使用无衬线等宽数字（tabular-nums），点击可在 `10,000` 与 `1万` 之间切换，全站组件一致。
 - **组织经营下钻**：登录后按角色自动定位到自己的组织，默认展示下一级汇总；可逐级点击区域 / 门店继续下钻，也可切换「全部门店」平铺或「全部员工」合并视图，销售、目标与达成率随层级同步口径。
@@ -558,6 +559,7 @@ Oracle 注意事项：
 GET    /api/v1/dashboards
 GET    /api/v1/dashboards/:id
 GET    /api/v1/dashboards/:id/data?start_date=&end_date=
+GET    /api/v1/dashboards/:id/widgets/:widgetId/trend?field=&group_field=&group_value=&start_date=&end_date=&filters=
 GET    /api/v1/dashboards/:id/export?format=xlsx&start_date=&end_date=
 GET    /api/v1/dashboards/:id/export?format=csv&widget_id=&start_date=&end_date=
 POST   /api/v1/dashboards
@@ -582,6 +584,7 @@ POST   /api/v1/shares
 GET    /api/v1/shares
 DELETE /api/v1/shares/:id
 GET    /api/v1/public/dashboards/:token   # 公开
+GET    /api/v1/public/dashboards/:token/widgets/:widgetId/trend   # 公开，数据范围取自分享令牌
 ```
 
 ### 后台管理

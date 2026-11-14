@@ -3,6 +3,7 @@ package handler
 import (
 	"strconv"
 	"strings"
+	"time"
 
 	"bi-platform/internal/middleware"
 	"bi-platform/internal/pkg/response"
@@ -81,10 +82,22 @@ func requestBaseURL(c *gin.Context) string {
 	if forwarded := strings.TrimSpace(c.GetHeader("X-Forwarded-Host")); forwarded != "" {
 		host = strings.Split(forwarded, ",")[0]
 	}
+	// 反向代理有时只在 X-Forwarded-Port 里带端口，避免分享链接丢失 8486 端口
+	if port := strings.TrimSpace(c.GetHeader("X-Forwarded-Port")); port != "" && !hostHasPort(host) {
+		host = host + ":" + strings.Split(port, ",")[0]
+	}
 	if host == "" {
 		return ""
 	}
 	return scheme + "://" + host
+}
+
+// hostHasPort 判断 Host 头里是否已包含端口（兼容 IPv6 字面量写法）。
+func hostHasPort(host string) bool {
+	if strings.HasPrefix(host, "[") {
+		return strings.Contains(host, "]:")
+	}
+	return strings.Count(host, ":") == 1
 }
 
 // List 查询分享链接列表；非管理员只能看到自己创建的链接。
@@ -191,6 +204,38 @@ func (h *ShareHandler) PublicDrillTrend(c *gin.Context) {
 		service.DataScope{OrgIDs: orgIDs}, 0, nodeID, c.Query("node_type"),
 		c.Query("metric"), c.Query("start_date"), c.Query("end_date"),
 	)
+	if err != nil {
+		response.BadRequest(c, err.Error())
+		return
+	}
+	response.OK(c, result)
+}
+
+// PublicWidgetTrend 授权分享页的组件指标趋势。
+// 组织范围严格取自分享令牌，无法通过参数扩大到分享者的授权范围之外。
+func (h *ShareHandler) PublicWidgetTrend(c *gin.Context) {
+	token := c.Param("token")
+	link, orgIDs, err := h.share.ResolveForRead(token)
+	if err != nil {
+		response.Forbidden(c, err.Error())
+		return
+	}
+	startDate := strings.TrimSpace(c.Query("start_date"))
+	endDate := strings.TrimSpace(c.Query("end_date"))
+	if startDate == "" {
+		startDate = time.Now().AddDate(0, 0, -6).Format("2006-01-02")
+	}
+	if endDate == "" {
+		endDate = time.Now().Format("2006-01-02")
+	}
+	result, err := h.dashboard.WidgetTrend(c.Request.Context(), link.DashboardID, service.WidgetTrendRequest{
+		WidgetID:   c.Param("widgetId"),
+		Field:      c.Query("field"),
+		GroupField: c.Query("group_field"),
+		GroupValue: c.Query("group_value"),
+		StartDate:  startDate,
+		EndDate:    endDate,
+	}, orgIDs, service.QueryOptions{Filters: filterParams(c), ShareMode: true})
 	if err != nil {
 		response.BadRequest(c, err.Error())
 		return

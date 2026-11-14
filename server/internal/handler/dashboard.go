@@ -181,6 +181,38 @@ func (h *DashboardHandler) Data(c *gin.Context) {
 	response.OK(c, result)
 }
 
+// WidgetTrend 查询单个组件的指标趋势，默认最近 7 天。
+// 权限与数据范围复用组织下钻 / 看板的统一校验逻辑，不会因为趋势查询绕过数据边界。
+func (h *DashboardHandler) WidgetTrend(c *gin.Context) {
+	id, _ := strconv.ParseUint(c.Param("id"), 10, 64)
+	_, orgIDs, ok := h.authorizedDashboard(c, id)
+	if !ok {
+		return
+	}
+	startDate := strings.TrimSpace(c.Query("start_date"))
+	endDate := strings.TrimSpace(c.Query("end_date"))
+	// 未指定时默认最近 7 天，与组织下钻趋势保持一致
+	if startDate == "" {
+		startDate = time.Now().AddDate(0, 0, -6).Format("2006-01-02")
+	}
+	if endDate == "" {
+		endDate = time.Now().Format("2006-01-02")
+	}
+	result, err := h.service.WidgetTrend(c.Request.Context(), id, service.WidgetTrendRequest{
+		WidgetID:   c.Param("widgetId"),
+		Field:      c.Query("field"),
+		GroupField: c.Query("group_field"),
+		GroupValue: c.Query("group_value"),
+		StartDate:  startDate,
+		EndDate:    endDate,
+	}, orgIDs, service.QueryOptions{Filters: filterParams(c)})
+	if err != nil {
+		response.BadRequest(c, err.Error())
+		return
+	}
+	response.OK(c, result)
+}
+
 // Export 导出整份看板 Excel 或单个组件 CSV。
 // 权限、组织范围与在线查看完全一致，不会绕过 CanViewDashboard。
 func (h *DashboardHandler) Export(c *gin.Context) {

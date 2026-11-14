@@ -1,6 +1,7 @@
 <!-- KPI 指标卡组件：把查询结果第一行渲染成若干指标块，支持目标达成率与同比/环比 -->
 <script setup>
 import { computed } from 'vue'
+import { TrendingUp } from 'lucide-vue-next'
 import NumText from './NumText.vue'
 import { toNumber } from '../utils/format'
 
@@ -10,6 +11,9 @@ const props = defineProps({
   // 组件配置：columns 指定展示哪些字段、target 达成目标、compare 对比字段
   config: { type: Object, default: () => ({}) },
 })
+
+// 点击指标块时把字段信息抛给上层，用于打开「指标趋势」弹窗
+const emit = defineEmits(['metric-click'])
 
 // 根据配置或查询列自动生成指标列表，并计算达成率、变化率与状态颜色
 const metrics = computed(() => {
@@ -52,12 +56,35 @@ const metrics = computed(() => {
     }
   })
 })
+
+// 点击指标块：仅数值型指标可查看趋势
+function handleClick(metric) {
+  if (!metric?.isNumeric) return
+  emit('metric-click', {
+    field: metric.field,
+    label: metric.label,
+    unit: metric.unit,
+    format: metric.format,
+  })
+}
 </script>
 
 <template>
   <div class="kpi-widget">
-    <div v-for="(metric, index) in metrics" :key="`${metric.field}-${index}`" class="kpi-cell">
-      <div class="kpi-label">{{ metric.label }}</div>
+    <div
+      v-for="(metric, index) in metrics"
+      :key="`${metric.field}-${index}`"
+      class="kpi-cell"
+      :class="{ 'kpi-clickable': metric.isNumeric }"
+      :tabindex="metric.isNumeric ? 0 : undefined"
+      :title="metric.isNumeric ? '点击查看该指标趋势（点击数字可切换 原始值 / 万·亿）' : undefined"
+      @click="handleClick(metric)"
+      @keydown.enter.prevent="handleClick(metric)"
+    >
+      <div class="kpi-label">
+        {{ metric.label }}
+        <TrendingUp v-if="metric.isNumeric" :size="11" class="kpi-trend-icon" />
+      </div>
       <div class="kpi-value">
         <NumText
           v-if="metric.isNumeric"
@@ -95,3 +122,28 @@ const metrics = computed(() => {
     </div>
   </div>
 </template>
+
+<style scoped>
+/* 数值型指标块可点击查看趋势，悬停时给出轻量反馈 */
+.kpi-clickable {
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+.kpi-clickable:hover {
+  background: rgba(20, 184, 166, 0.06);
+}
+.kpi-clickable:focus-visible {
+  outline: 2px solid var(--emerald);
+  outline-offset: -2px;
+}
+.kpi-trend-icon {
+  color: var(--emerald);
+  opacity: 0.45;
+  vertical-align: -1px;
+  margin-left: 3px;
+  transition: opacity 0.15s ease;
+}
+.kpi-clickable:hover .kpi-trend-icon {
+  opacity: 1;
+}
+</style>

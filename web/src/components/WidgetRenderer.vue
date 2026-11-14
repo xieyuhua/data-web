@@ -3,7 +3,7 @@
      并负责「表格 ⇄ 图表」切换、点击图表元素查看明细、联动全局筛选与图片下载 -->
 <script setup>
 import { computed, ref, watch } from 'vue'
-import { BarChart3, Download, Table2 } from 'lucide-vue-next'
+import { BarChart3, Download, Table2, TrendingUp } from 'lucide-vue-next'
 import ChartRenderer from './ChartRenderer.vue'
 import KpiWidget from './KpiWidget.vue'
 import DataTableWidget from './DataTableWidget.vue'
@@ -13,7 +13,7 @@ const props = defineProps({
   result: { type: Object, default: null },
 })
 
-const emit = defineEmits(['link-filter'])
+const emit = defineEmits(['link-filter', 'metric-trend'])
 
 const chartData = computed(() => props.result?.data || null)
 const error = computed(() => props.result?.error || '')
@@ -61,6 +61,72 @@ const elapsedText = computed(() => {
   return elapsed > 0 ? `${elapsed}ms` : ''
 })
 const linkFilter = computed(() => String(config.value?.linkFilter || '').trim())
+
+// 推断组件可做趋势的指标字段：优先组件配置，其次结果里第一个数值列。
+// 该字段会交给后端趋势接口，由后端按数据权限聚合。
+const trendTarget = computed(() => {
+  const cfg = config.value || {}
+  const columns = chartData.value?.columns || []
+  const row = chartData.value?.rows?.[0] || []
+  let field = ''
+  for (const key of ['yField', 'rateField', 'actualField', 'valueField']) {
+    if (typeof cfg[key] === 'string' && cfg[key].trim()) {
+      field = cfg[key].trim()
+      break
+    }
+  }
+  if (!field && Array.isArray(cfg.columns)) {
+    const entry = cfg.columns.find((item) => item && item.field)
+    if (entry) field = entry.field
+  }
+  if (!field) {
+    field = columns.find((name, index) => {
+      const value = row[index]
+      if (value === null || value === undefined || value === '') return false
+      return Number.isFinite(Number(value))
+    }) || ''
+  }
+  if (!field) return null
+  let label = field
+  let unit = typeof cfg.unit === 'string' ? cfg.unit : ''
+  let format = ''
+  if (Array.isArray(cfg.columns)) {
+    const entry = cfg.columns.find((item) => item && item.field === field)
+    if (entry) {
+      label = entry.label || label
+      unit = entry.unit || unit
+      format = entry.format || format
+    }
+  }
+  return { field, label, unit, format }
+})
+
+// 有数据且能识别出指标字段时才展示趋势入口
+const canTrend = computed(() => Boolean(trendTarget.value) && Boolean(chartData.value) && !error.value)
+
+// 打开趋势弹窗：把组件与指标信息交给页面，由页面统一渲染弹窗
+function openTrend(target = null) {
+  const item = target || trendTarget.value
+  if (!item?.field) return
+  emit('metric-trend', {
+    widget: props.widget,
+    field: item.field,
+    label: item.label,
+    unit: item.unit,
+    format: item.format,
+  })
+}
+
+// KPI 卡片内点击某个指标：按该指标字段打开趋势
+function handleMetricClick(metric) {
+  if (!metric?.field) return
+  openTrend({
+    field: metric.field,
+    label: metric.label,
+    unit: metric.unit,
+    format: metric.format,
+  })
+}
 
 function downloadImage() {
   chartRef.value?.exportImage(props.widget.title || props.widget.chart_type || 'chart')
@@ -121,7 +187,12 @@ watch(
     </div>
   </div>
 
-  <KpiWidget v-else-if="widget.chart_type === 'kpi'" :data="chartData" :config="config" />
+  <KpiWidget
+    v-else-if="widget.chart_type === 'kpi'"
+    :data="chartData"
+    :config="config"
+    @metric-click="handleMetricClick"
+  />
 
   <div v-else class="chart-card">
     <div class="chart-card-head">
@@ -134,6 +205,17 @@ watch(
         <span v-if="chartData?.cached" class="tag tag-green" title="20 秒内复用的查询结果">缓存</span>
         <span v-else-if="elapsedText" class="tag">{{ elapsedText }}</span>
         <span v-if="chartData?.count" class="tag">{{ chartData.count }} 行</span>
+        <!-- 指标趋势：点击数字或此按钮可查看最近 7 天走势，时间区间可切换 -->
+        <button
+          v-if="canTrend"
+          type="button"
+          class="widget-icon-btn"
+          title="查看指标趋势"
+          aria-label="查看指标趋势"
+          @click.stop="openTrend()"
+        >
+          <TrendingUp :size="13" />
+        </button>
         <button
           v-if="chartData && !showTable && !error"
           type="button"

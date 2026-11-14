@@ -140,11 +140,13 @@ type DashboardService struct {
 	repo        *repository.DashboardRepository
 	datasetRepo *repository.DatasetRepository
 	dataset     *DatasetService
+	// drill 用于数据集没有日期列时，按组织范围回退计算指标趋势。
+	drill *DrillService
 }
 
 // NewDashboardService 创建看板服务。
-func NewDashboardService(repo *repository.DashboardRepository, datasetRepo *repository.DatasetRepository, dataset *DatasetService) *DashboardService {
-	return &DashboardService{repo: repo, datasetRepo: datasetRepo, dataset: dataset}
+func NewDashboardService(repo *repository.DashboardRepository, datasetRepo *repository.DatasetRepository, dataset *DatasetService, drill *DrillService) *DashboardService {
+	return &DashboardService{repo: repo, datasetRepo: datasetRepo, dataset: dataset, drill: drill}
 }
 
 // List 查询看板列表。

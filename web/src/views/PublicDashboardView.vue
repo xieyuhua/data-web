@@ -19,6 +19,7 @@ import DashboardFilterBar from '../components/DashboardFilterBar.vue'
 import EmptyBlock from '../components/EmptyBlock.vue'
 import OrgDrillExplorer from '../components/OrgDrillExplorer.vue'
 import WidgetRenderer from '../components/WidgetRenderer.vue'
+import WidgetTrendDialog from '../components/WidgetTrendDialog.vue'
 
 const route = useRoute()
 const router = useRouter()
@@ -37,6 +38,9 @@ const dates = ref(dateRange(30))
 const activeTab = ref('dashboard')
 const pageRef = ref(null)
 const filterValues = ref({})
+// 指标趋势弹窗：分享页通过令牌接口读取，权限继承分享链接绑定的组织范围
+const trendVisible = ref(false)
+const trendPayload = ref(null)
 let filterTimer = null
 
 const { isFullscreen, toggleFullscreen } = useFullscreen(pageRef)
@@ -190,6 +194,13 @@ function handleLinkFilter(payload = {}) {
   }
   syncFilterQuery()
   refresh()
+}
+
+// 点击指标数字 / 趋势按钮时打开趋势弹窗
+function handleWidgetTrend(payload = {}) {
+  if (!payload?.field) return
+  trendPayload.value = payload
+  trendVisible.value = true
 }
 
 // 加载公开看板的配置与数据
@@ -437,6 +448,7 @@ onBeforeUnmount(() => {
                 :widget="widget"
                 :result="resultMap[widget.id]"
                 @link-filter="handleLinkFilter"
+                @metric-trend="handleWidgetTrend"
               />
             </div>
           </div>
@@ -456,6 +468,18 @@ onBeforeUnmount(() => {
           <CalendarRange :size="12" style="vertical-align: -2px" />
           数据由受控 SQL 实时查询，单次最多 2000 行 · 青衡 BI
         </div>
+
+        <!-- 指标趋势弹窗：分享令牌接口，只读且受分享范围限制 -->
+        <WidgetTrendDialog
+          v-model="trendVisible"
+          :share-token="String(token || '')"
+          :widget="trendPayload?.widget"
+          :field="trendPayload?.field"
+          :label="trendPayload?.label"
+          :unit="trendPayload?.unit"
+          :format="trendPayload?.format"
+          :filters="activeFilters()"
+        />
       </template>
     </main>
   </div>

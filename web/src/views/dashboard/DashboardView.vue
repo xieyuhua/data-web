@@ -33,6 +33,7 @@ import EmptyBlock from '../../components/EmptyBlock.vue'
 import OrgDrillExplorer from '../../components/OrgDrillExplorer.vue'
 import ShareDialog from '../../components/ShareDialog.vue'
 import WidgetRenderer from '../../components/WidgetRenderer.vue'
+import WidgetTrendDialog from '../../components/WidgetTrendDialog.vue'
 
 const route = useRoute()
 const router = useRouter()
@@ -55,6 +56,9 @@ const exporting = ref(false)
 const filterValues = ref({})
 // 当前用户对该看板的个人偏好（收藏 / 置顶）
 const pref = ref({ favorite: false, pinned: false })
+// 指标趋势弹窗：记录当前查看的组件与指标
+const trendVisible = ref(false)
+const trendPayload = ref(null)
 let refreshTimer = null
 let filterTimer = null
 
@@ -233,6 +237,14 @@ function handleLinkFilter(payload = {}) {
   loadData()
   const label = target?.label || key
   ElMessage.success(`已联动筛选：${label} = ${value}`)
+}
+
+// 组件指标趋势：点击指标卡数字或组件右上角趋势按钮时打开弹窗。
+// 趋势查询沿用当前看板的时间区间外的默认 7 天，并带上正在生效的全局筛选条件。
+function handleWidgetTrend(payload = {}) {
+  if (!payload?.field) return
+  trendPayload.value = payload
+  trendVisible.value = true
 }
 
 // 加载看板配置
@@ -586,6 +598,7 @@ onBeforeUnmount(() => {
               :widget="widget"
               :result="resultMap[widget.id]"
               @link-filter="handleLinkFilter"
+              @metric-trend="handleWidgetTrend"
             />
           </div>
         </div>
@@ -617,6 +630,18 @@ onBeforeUnmount(() => {
         v-model="shareVisible"
         :dashboard-id="Number(dashboardId)"
         :dashboard-name="dashboard?.name || '经营看板'"
+      />
+
+      <!-- 指标趋势弹窗：按组织数据权限聚合，支持近 7 / 30 / 90 天与自定义区间 -->
+      <WidgetTrendDialog
+        v-model="trendVisible"
+        :dashboard-id="Number(dashboardId)"
+        :widget="trendPayload?.widget"
+        :field="trendPayload?.field"
+        :label="trendPayload?.label"
+        :unit="trendPayload?.unit"
+        :format="trendPayload?.format"
+        :filters="activeFilters()"
       />
     </template>
   </div>

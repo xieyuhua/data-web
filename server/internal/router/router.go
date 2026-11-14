@@ -71,6 +71,7 @@ func New(deps Dependencies) *gin.Engine {
 	api.GET("/public/dashboards/:token", deps.Share.Public)
 	api.GET("/public/dashboards/:token/drill", deps.Share.PublicDrill)
 	api.GET("/public/dashboards/:token/drill/trend", deps.Share.PublicDrillTrend)
+	api.GET("/public/dashboards/:token/widgets/:widgetId/trend", deps.Share.PublicWidgetTrend)
 
 	// ---------- 登录后可访问的接口 ----------
 	secured := api.Group("")
@@ -122,6 +123,8 @@ func New(deps Dependencies) *gin.Engine {
 		secured.GET("/dashboards", deps.Dashboard.List)
 		secured.GET("/dashboards/:id", deps.Dashboard.Get)
 		secured.GET("/dashboards/:id/data", deps.Dashboard.Data)
+		// 单组件指标趋势：默认最近 7 天，时间区间可自定义
+		secured.GET("/dashboards/:id/widgets/:widgetId/trend", deps.Dashboard.WidgetTrend)
 		secured.GET("/dashboards/:id/export", deps.Dashboard.Export)
 		secured.POST("/dashboards", middleware.RequirePermission("dashboard:create"), deps.Dashboard.Create)
 		secured.PUT("/dashboards/:id", middleware.RequirePermission("dashboard:create"), deps.Dashboard.Update)
