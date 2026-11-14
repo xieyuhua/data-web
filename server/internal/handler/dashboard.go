@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/http"
 	"net/url"
+	"sort"
 	"strconv"
 	"strings"
 	"time"
@@ -12,6 +13,7 @@ import (
 	"bi-platform/internal/middleware"
 	"bi-platform/internal/model"
 	"bi-platform/internal/pkg/response"
+	"bi-platform/internal/pkg/sqlguard"
 	"bi-platform/internal/repository"
 	"bi-platform/internal/service"
 
@@ -222,8 +224,9 @@ func (h *DashboardHandler) Export(c *gin.Context) {
 		return
 	}
 	startDate, endDate := dateParams(c)
+	filters := filterParams(c)
 	data, err := h.service.Query(c.Request.Context(), id, startDate, endDate, orgIDs,
-		service.QueryOptions{Filters: filterParams(c)})
+		service.QueryOptions{Filters: filters})
 	if err != nil {
 		response.BadRequest(c, err.Error())
 		return
@@ -243,7 +246,14 @@ func (h *DashboardHandler) Export(c *gin.Context) {
 		writeDownload(c, "text/csv; charset=utf-8", filename, content)
 		return
 	}
-	content, err := service.BuildDashboardExcel(dashboard.Name, data, widgetID)
+	// 导出说明：把口径、范围、筛选与导出人写进 Excel 首页，方便对账与审计
+	meta := service.ExportMeta{
+		Operator:   exportOperator(middleware.CurrentUser(c)),
+		Scope:      exportScope(middleware.CurrentRole(c), orgIDs),
+		Filters:    describeFilterValues(filters),
+		ExportedAt: time.Now(),
+	}
+	content, err := service.BuildDashboardExcel(dashboard.Name, data, widgetID, meta)
 	if err != nil {
 		response.BadRequest(c, err.Error())
 		return
@@ -317,6 +327,49 @@ func exportFileName(name, ext string) string {
 		cleaned = string(runes[:60])
 	}
 	return cleaned + "." + ext
+}
+
+// exportOperator 导出人描述：优先「姓名（账号）」，无姓名时退化为账号。
+func exportOperator(user *model.User) string {
+	if user == nil {
+		return ""
+	}
+	name := strings.TrimSpace(user.Name)
+	if name == "" {
+		return user.Username
+	}
+	return fmt.Sprintf("%s（%s）", name, user.Username)
+}
+
+// exportScope 数据范围描述：角色名称 + 本次查询实际可见的组织数量。
+func exportScope(role *model.Role, orgIDs []uint64) string {
+	roleName := "未知角色"
+	if role != nil && strings.TrimSpace(role.Name) != "" {
+		roleName = role.Name
+	}
+	return fmt.Sprintf("角色：%s · 可见组织 %d 个", roleName, len(orgIDs))
+}
+
+// describeFilterValues 把全局筛选条件转成可读文本，例如「channel=线上、city=上海 / 杭州」。
+// 多选值在服务端用 sqlguard.FilterValueSeparator 编码，这里还原为「/」分隔便于阅读。
+func describeFilterValues(filters map[string]string) string {
+	if len(filters) == 0 {
+		return ""
+	}
+	keys := make([]string, 0, len(filters))
+	for key := range filters {
+		keys = append(keys, key)
+	}
+	sort.Strings(keys)
+	parts := make([]string, 0, len(keys))
+	for _, key := range keys {
+		value := filters[key]
+		if strings.Contains(value, sqlguard.FilterValueSeparator) {
+			value = strings.Join(strings.Split(value, sqlguard.FilterValueSeparator), " / ")
+		}
+		parts = append(parts, key+"="+value)
+	}
+	return strings.Join(parts, "、")
 }
 
 // writeDownload 输出附件下载，文件名同时提供 ASCII 回退与 RFC 5987 编码。

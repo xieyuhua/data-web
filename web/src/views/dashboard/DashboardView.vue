@@ -495,74 +495,77 @@ onBeforeUnmount(() => {
             style="width: 232px"
             @change="chooseCustom"
           />
-          <button v-if="activeTab === 'dashboard'" class="icon-btn" type="button" title="刷新（跳过缓存）" @click="loadData()">
-            <RefreshCw :size="15" :class="{ spin: refreshing }" />
-          </button>
-          <el-dropdown trigger="click" :disabled="exporting" @command="handleExport">
-            <button class="btn btn-secondary btn-sm" type="button">
-              <Download :size="14" /> 导出
+          <!-- 操作按钮统一分组：窄屏换行时整组换行，避免只剩单个按钮掉到下一行 -->
+          <div class="toolbar-actions">
+            <button v-if="activeTab === 'dashboard'" class="icon-btn" type="button" title="刷新（跳过缓存）" @click="loadData()">
+              <RefreshCw :size="15" :class="{ spin: refreshing }" />
             </button>
-            <template #dropdown>
-              <el-dropdown-menu>
-                <el-dropdown-item command="xlsx">
-                  <FileSpreadsheet :size="13" /> 整份看板 Excel
-                </el-dropdown-item>
-                <el-dropdown-item
-                  v-for="widget in exportableWidgets"
-                  :key="widget.id"
-                  :command="`csv:${widget.id}`"
-                >
-                  <FileDown :size="13" /> {{ widget.title || '明细表' }}（CSV）
-                </el-dropdown-item>
-              </el-dropdown-menu>
+            <el-dropdown trigger="click" :disabled="exporting" @command="handleExport">
+              <button class="btn btn-secondary btn-sm" type="button">
+                <Download :size="14" /> 导出
+              </button>
+              <template #dropdown>
+                <el-dropdown-menu>
+                  <el-dropdown-item command="xlsx">
+                    <FileSpreadsheet :size="13" /> 整份看板 Excel
+                  </el-dropdown-item>
+                  <el-dropdown-item
+                    v-for="widget in exportableWidgets"
+                    :key="widget.id"
+                    :command="`csv:${widget.id}`"
+                  >
+                    <FileDown :size="13" /> {{ widget.title || '明细表' }}（CSV）
+                  </el-dropdown-item>
+                </el-dropdown-menu>
+              </template>
+            </el-dropdown>
+            <button class="icon-btn" type="button" title="打印" @click="printPage">
+              <Printer :size="15" />
+            </button>
+            <button
+              class="icon-btn"
+              type="button"
+              :title="isFullscreen ? '退出全屏' : '全屏查看'"
+              @click="toggleFullscreen"
+            >
+              <Minimize2 v-if="isFullscreen" :size="15" />
+              <Maximize2 v-else :size="15" />
+            </button>
+            <!-- 个人偏好：收藏 / 置顶，仅影响当前账号首页的排序与分组 -->
+            <button
+              class="icon-btn"
+              :class="{ 'pref-on': pref.favorite }"
+              type="button"
+              :title="pref.favorite ? '取消收藏' : '收藏看板'"
+              @click="togglePref('favorite')"
+            >
+              <Star :size="15" />
+            </button>
+            <button
+              class="icon-btn pin-btn"
+              :class="{ 'pin-on': pref.pinned }"
+              type="button"
+              :title="pref.pinned ? '取消置顶' : '置顶看板'"
+              @click="togglePref('pinned')"
+            >
+              <Pin :size="15" />
+            </button>
+            <button v-if="canShare" class="btn btn-secondary btn-sm" type="button" @click="shareVisible = true">
+              <Share2 :size="14" /> 分享
+            </button>
+            <button v-if="canEdit" class="btn btn-primary btn-sm" type="button" @click="router.push(`/dashboards/${dashboardId}/edit`)">
+              <Pencil :size="14" /> 编辑
+            </button>
+            <el-dropdown v-if="canEdit" trigger="click">
+              <button class="icon-btn" type="button" title="更多操作">···</button>
+              <template #dropdown>
+                <el-dropdown-menu>
+                  <el-dropdown-item @click="duplicate"><Copy :size="13" /> 复制看板</el-dropdown-item>
+                  <el-dropdown-item divided @click="remove"><Trash2 :size="13" /> 删除看板</el-dropdown-item>
+                </el-dropdown-menu>
             </template>
           </el-dropdown>
-          <button class="icon-btn" type="button" title="打印" @click="printPage">
-            <Printer :size="15" />
-          </button>
-          <button
-            class="icon-btn"
-            type="button"
-            :title="isFullscreen ? '退出全屏' : '全屏查看'"
-            @click="toggleFullscreen"
-          >
-            <Minimize2 v-if="isFullscreen" :size="15" />
-            <Maximize2 v-else :size="15" />
-          </button>
-          <!-- 个人偏好：收藏 / 置顶，仅影响当前账号首页的排序与分组 -->
-          <button
-            class="icon-btn"
-            :class="{ 'pref-on': pref.favorite }"
-            type="button"
-            :title="pref.favorite ? '取消收藏' : '收藏看板'"
-            @click="togglePref('favorite')"
-          >
-            <Star :size="15" />
-          </button>
-          <button
-            class="icon-btn pin-btn"
-            :class="{ 'pin-on': pref.pinned }"
-            type="button"
-            :title="pref.pinned ? '取消置顶' : '置顶看板'"
-            @click="togglePref('pinned')"
-          >
-            <Pin :size="15" />
-          </button>
-          <button v-if="canShare" class="btn btn-secondary btn-sm" type="button" @click="shareVisible = true">
-            <Share2 :size="14" /> 分享
-          </button>
-          <button v-if="canEdit" class="btn btn-primary btn-sm" type="button" @click="router.push(`/dashboards/${dashboardId}/edit`)">
-            <Pencil :size="14" /> 编辑
-          </button>
-          <el-dropdown v-if="canEdit" trigger="click">
-            <button class="icon-btn" type="button" title="更多操作">···</button>
-            <template #dropdown>
-              <el-dropdown-menu>
-                <el-dropdown-item @click="duplicate"><Copy :size="13" /> 复制看板</el-dropdown-item>
-                <el-dropdown-item divided @click="remove"><Trash2 :size="13" /> 删除看板</el-dropdown-item>
-              </el-dropdown-menu>
-            </template>
-          </el-dropdown>
+          </div>
         </div>
       </div>
 
@@ -599,6 +602,7 @@ onBeforeUnmount(() => {
               :result="resultMap[widget.id]"
               @link-filter="handleLinkFilter"
               @metric-trend="handleWidgetTrend"
+              @retry="loadData()"
             />
           </div>
         </div>

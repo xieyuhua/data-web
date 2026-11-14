@@ -7,14 +7,25 @@ import (
 	"fmt"
 	"strconv"
 	"strings"
+	"time"
 	"unicode/utf8"
 
 	"github.com/xuri/excelize/v2"
 )
 
-// BuildDashboardExcel 生成整份看板的 Excel：每个数据组件一个工作表。
-// widgetID 非空时只导出指定组件。
-func BuildDashboardExcel(dashboardName string, data *DashboardData, widgetID string) ([]byte, error) {
+// ExportMeta 导出说明信息。
+// 导出文件会自带一页「导出说明」，记录统计周期、数据范围、筛选条件与导出人，
+// 方便财务对账、审计追溯，避免同名表不同口径。
+type ExportMeta struct {
+	Operator   string    // 导出人（姓名 / 账号）
+	Scope      string    // 数据权限范围描述（角色 + 可见组织数量）
+	Filters    string    // 生效的全局筛选条件描述
+	ExportedAt time.Time // 导出时间
+}
+
+// BuildDashboardExcel 生成整份看板的 Excel：首页为「导出说明」，其后每个数据组件一个工作表。
+// widgetID 非空时只导出指定组件（此时仍保留导出说明页）。
+func BuildDashboardExcel(dashboardName string, data *DashboardData, widgetID string, meta ExportMeta) ([]byte, error) {
 	if data == nil {
 		return nil, errors.New("没有可导出的看板数据")
 	}
@@ -24,6 +35,8 @@ func BuildDashboardExcel(dashboardName string, data *DashboardData, widgetID str
 	used := make(map[string]bool, len(data.Widgets))
 	created := 0
 	first := true
+	// firstSheet 记录第一个数据工作表名称，用于把「导出说明」移动到最前面
+	firstSheet := ""
 	for index, widget := range data.Widgets {
 		if widgetID != "" && widget.WidgetID != widgetID {
 			continue
@@ -36,6 +49,7 @@ func BuildDashboardExcel(dashboardName string, data *DashboardData, widgetID str
 		if first {
 			_ = file.SetSheetName("Sheet1", sheet)
 			first = false
+			firstSheet = sheet
 		} else if _, err := file.NewSheet(sheet); err != nil {
 			return nil, err
 		}
@@ -50,16 +64,90 @@ func BuildDashboardExcel(dashboardName string, data *DashboardData, widgetID str
 		}
 		sheet := "看板概览"
 		_ = file.SetSheetName("Sheet1", sheet)
+		firstSheet = sheet
 		_ = file.SetCellValue(sheet, "A1", dashboardName)
 		_ = file.SetCellValue(sheet, "A2", fmt.Sprintf("统计周期：%s 至 %s", data.StartDate, data.EndDate))
 		_ = file.SetCellValue(sheet, "A3", "该看板暂无数据组件")
 		_ = file.SetColWidth(sheet, "A", "A", 40)
+	}
+	// 生成「导出说明」页并移动到首位；移动失败不影响数据导出
+	if metaSheet, err := writeExportMetaSheet(file, dashboardName, data, meta, created); err == nil && firstSheet != "" {
+		_ = file.MoveSheet(metaSheet, firstSheet)
 	}
 	buffer, err := file.WriteToBuffer()
 	if err != nil {
 		return nil, err
 	}
 	return buffer.Bytes(), nil
+}
+
+// writeExportMetaSheet 写入「导出说明」工作表：口径、范围、筛选、导出人与时间。
+func writeExportMetaSheet(file *excelize.File, dashboardName string, data *DashboardData, meta ExportMeta, widgetCount int) (string, error) {
+	const sheet = "导出说明"
+	if _, err := file.NewSheet(sheet); err != nil {
+		return "", err
+	}
+	_ = file.SetColWidth(sheet, "A", "A", 14)
+	_ = file.SetColWidth(sheet, "B", "B", 64)
+	_ = file.MergeCell(sheet, "A1", "B1")
+	_ = file.SetCellValue(sheet, "A1", excelSafeText(dashboardName)+" · 导出说明")
+	titleStyle, _ := file.NewStyle(&excelize.Style{
+		Font:      &excelize.Font{Bold: true, Size: 14, Color: "173A33"},
+		Alignment: &excelize.Alignment{Vertical: "center"},
+	})
+	_ = file.SetCellStyle(sheet, "A1", "B1", titleStyle)
+	_ = file.SetRowHeight(sheet, 1, 28)
+
+	// 口径信息：空值统一给出可读的默认说明，避免导出后出现空白单元格
+	rows := [][2]string{
+		{"看板名称", dashboardName},
+		{"统计周期", fmt.Sprintf("%s 至 %s", data.StartDate, data.EndDate)},
+		{"数据范围", fallbackText(meta.Scope, "按导出账号的角色数据范围")},
+		{"全局筛选", fallbackText(meta.Filters, "无（全部数据）")},
+		{"导出人", fallbackText(meta.Operator, "—")},
+		{"导出时间", meta.ExportedAt.Format("2006-01-02 15:04:05")},
+		{"数据组件", fmt.Sprintf("%d 个", widgetCount)},
+	}
+	labelStyle, _ := file.NewStyle(&excelize.Style{
+		Font:      &excelize.Font{Bold: true, Size: 10, Color: "3F5B53"},
+		Alignment: &excelize.Alignment{Vertical: "center"},
+	})
+	valueStyle, _ := file.NewStyle(&excelize.Style{
+		Font:      &excelize.Font{Size: 10, Color: "1F2E2A"},
+		Alignment: &excelize.Alignment{Vertical: "center", WrapText: true},
+	})
+	for index, row := range rows {
+		line := index + 3
+		labelCell, _ := excelize.CoordinatesToCellName(1, line)
+		valueCell, _ := excelize.CoordinatesToCellName(2, line)
+		_ = file.SetCellValue(sheet, labelCell, row[0])
+		_ = file.SetCellValue(sheet, valueCell, excelSafeText(row[1]))
+		_ = file.SetCellStyle(sheet, labelCell, labelCell, labelStyle)
+		_ = file.SetCellStyle(sheet, valueCell, valueCell, valueStyle)
+		_ = file.SetRowHeight(sheet, line, 20)
+	}
+
+	// 口径提示：说明数据来源与快照性质，便于业务方正确理解数字
+	noteLine := len(rows) + 5
+	_ = file.MergeCell(sheet, fmt.Sprintf("A%d", noteLine), fmt.Sprintf("B%d", noteLine))
+	note := "数据说明：以上数据由受控 SQL 数据集按当前筛选条件实时查询生成，单次最多返回 2000 行；" +
+		"本文件为导出时刻的数据快照，与看板实时数字可能存在时间差。"
+	_ = file.SetCellValue(sheet, fmt.Sprintf("A%d", noteLine), excelSafeText(note))
+	noteStyle, _ := file.NewStyle(&excelize.Style{
+		Font:      &excelize.Font{Size: 10, Color: "6B7F76"},
+		Alignment: &excelize.Alignment{Vertical: "center", WrapText: true},
+	})
+	_ = file.SetCellStyle(sheet, fmt.Sprintf("A%d", noteLine), fmt.Sprintf("B%d", noteLine), noteStyle)
+	_ = file.SetRowHeight(sheet, noteLine, 34)
+	return sheet, nil
+}
+
+// fallbackText 返回去空格后的值，空值时使用默认文案。
+func fallbackText(value, fallback string) string {
+	if trimmed := strings.TrimSpace(value); trimmed != "" {
+		return trimmed
+	}
+	return fallback
 }
 
 func writeWidgetSheet(file *excelize.File, sheet string, data *DashboardData, widget WidgetQueryResult) error {

@@ -3,7 +3,7 @@
      并负责「表格 ⇄ 图表」切换、点击图表元素查看明细、联动全局筛选与图片下载 -->
 <script setup>
 import { computed, ref, watch } from 'vue'
-import { BarChart3, Download, Table2, TrendingUp } from 'lucide-vue-next'
+import { BarChart3, Download, RefreshCw, Table2, TrendingUp } from 'lucide-vue-next'
 import ChartRenderer from './ChartRenderer.vue'
 import KpiWidget from './KpiWidget.vue'
 import DataTableWidget from './DataTableWidget.vue'
@@ -13,7 +13,8 @@ const props = defineProps({
   result: { type: Object, default: null },
 })
 
-const emit = defineEmits(['link-filter', 'metric-trend'])
+// retry：组件查询失败时向页面请求重新取数（按当前筛选、跳过缓存）
+const emit = defineEmits(['link-filter', 'metric-trend', 'retry'])
 
 const chartData = computed(() => props.result?.data || null)
 const error = computed(() => props.result?.error || '')
@@ -188,7 +189,7 @@ watch(
   </div>
 
   <KpiWidget
-    v-else-if="widget.chart_type === 'kpi'"
+    v-else-if="widget.chart_type === 'kpi' && !error"
     :data="chartData"
     :config="config"
     @metric-click="handleMetricClick"
@@ -249,7 +250,12 @@ watch(
       </div>
     </div>
     <div class="chart-card-body">
-      <div v-if="error" class="chart-error">{{ error }}</div>
+      <div v-if="error" class="chart-error">
+        <span>{{ error }}</span>
+        <button class="btn btn-secondary btn-sm" type="button" @click.stop="emit('retry')">
+          <RefreshCw :size="13" /> 重试
+        </button>
+      </div>
       <template v-else-if="chartData">
         <DataTableWidget
           v-if="showTable"

@@ -449,6 +449,7 @@ onBeforeUnmount(() => {
                 :result="resultMap[widget.id]"
                 @link-filter="handleLinkFilter"
                 @metric-trend="handleWidgetTrend"
+                @retry="refresh()"
               />
             </div>
           </div>

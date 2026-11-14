@@ -1457,8 +1457,42 @@ p {
   display: flex;
   align-items: flex-end;
   justify-content: space-between;
+  /* 头部允许换行：工具栏放不下时整体换到下一行，而不是挤到标题同一行 */
+  flex-wrap: wrap;
   gap: 24px;
   margin-bottom: var(--space-4);
+}
+
+.dashboard-view-head > .view-toolbar {
+  /* 最小占位宽度接近工具栏真实宽度，空间不足时整体换行并右对齐 */
+  flex: 1 1 1100px;
+  min-width: 0;
+  justify-content: flex-end;
+  row-gap: 8px;
+}
+
+/* 中等宽度（笔记本常见 1280~1440）：收紧工具栏内部间距，尽量保持单行 */
+@media (max-width: 1440px) {
+  .dashboard-view-head > .view-toolbar {
+    gap: 6px;
+  }
+
+  .view-toolbar .date-range button {
+    padding: 0 8px;
+  }
+
+  .view-toolbar .btn-sm {
+    padding: 0 10px;
+  }
+
+  .view-toolbar .icon-btn {
+    width: 32px;
+    height: 32px;
+  }
+
+  .view-toolbar > .el-date-editor.el-date-editor--daterange {
+    width: 236px !important;
+  }
 }
 
 .dashboard-title-row {
@@ -1522,6 +1556,16 @@ p {
   flex-wrap: wrap;
 }
 
+/* 操作按钮分组：整组作为一个弹性项参与换行，窄屏时整组移行而不是只剩单个按钮 */
+.view-toolbar > .toolbar-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  flex: 0 1 auto;
+  margin-left: auto;
+  flex-wrap: nowrap;
+}
+
 /* 日期区间选择器固定宽度，避免在 flex 工具栏中被拉伸成整行 */
 .view-toolbar > .el-date-editor.el-date-editor--daterange {
   flex: 0 0 auto;
@@ -1530,7 +1574,7 @@ p {
 }
 
 /* 工具栏内的纯图标按钮与 btn-sm 保持同高，避免一行内高低错位 */
-.view-toolbar > .icon-btn {
+.view-toolbar .icon-btn {
   flex: 0 0 auto;
   width: 34px;
   height: 34px;
@@ -1701,8 +1745,10 @@ p {
 
 .chart-error {
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
+  gap: 10px;
   height: 100%;
   min-height: 130px;
   padding: 14px;
@@ -1740,12 +1786,14 @@ p {
 .kpi-cell::after {
   content: "";
   position: absolute;
-  right: -20px;
-  top: -35px;
-  width: 100px;
-  height: 100px;
-  border: 1px solid rgba(15, 118, 110, 0.05);
+  /* 装饰弧线收到右上角外侧并降低不透明度，避免穿过数值与单位 */
+  right: -46px;
+  top: -52px;
+  width: 118px;
+  height: 118px;
+  border: 1px solid rgba(15, 118, 110, 0.04);
   border-radius: 50%;
+  pointer-events: none;
 }
 
 .kpi-label {
@@ -1767,6 +1815,11 @@ p {
 
 .kpi-value {
   margin-top: 9px;
+  /* 数值与单位同一基线对齐，避免单位看起来“下沉”或“被压扁” */
+  display: flex;
+  align-items: baseline;
+  gap: 5px;
+  flex-wrap: nowrap;
   color: var(--ink);
   font-family: var(--font-number);
   font-size: clamp(24px, 2.7vw, 34px);
@@ -1779,12 +1832,14 @@ p {
 }
 
 .kpi-value small {
-  margin-left: 4px;
-  color: var(--muted-light);
+  margin-left: 0;
+  color: var(--muted);
   font-family: var(--font-sans);
-  font-size: 11px;
+  font-size: 13px;
   font-weight: 500;
   letter-spacing: 0;
+  line-height: 1;
+  flex: none;
 }
 
 .kpi-foot {
@@ -3631,11 +3686,13 @@ p {
   }
 
   .kpi-widget {
-    grid-template-columns: repeat(2, 1fr);
+    /* minmax(0,1fr) 防止数值过长时把两列撑出容器产生横向溢出 */
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
   .kpi-cell {
     min-height: 110px;
+    min-width: 0;
   }
 
   .widget-shell {
@@ -3647,19 +3704,33 @@ p {
     flex-direction: column;
   }
 
+  /* 纵向排列时取消横向的 flex-basis，避免工具栏被撑成固定高度 */
+  .dashboard-view-head > .view-toolbar {
+    flex: 0 0 auto;
+    width: 100%;
+  }
+
   .view-toolbar {
     width: 100%;
     gap: 6px;
   }
 
   /* 移动端收紧工具栏按钮，尽量让“分享/编辑”与前排图标同排显示 */
-  .view-toolbar > .btn-sm {
+  .view-toolbar .btn-sm {
     padding: 0 10px;
   }
 
-  .view-toolbar > .icon-btn {
+  .view-toolbar .icon-btn {
     width: 32px;
     height: 32px;
+  }
+
+  /* 移动端操作按钮组独占一行并允许内部换行 */
+  .view-toolbar > .toolbar-actions {
+    flex: 1 1 100%;
+    margin-left: 0;
+    flex-wrap: wrap;
+    gap: 6px;
   }
 
   .date-range {
@@ -3818,6 +3889,11 @@ p {
     /* 窄屏数值随视口收缩，保证“金额+单位”不被裁切 */
     font-size: clamp(17px, 4.5vw, 23px);
     letter-spacing: -0.03em;
+  }
+
+  /* 窄屏下单位同步缩小一档，保持与数值的比例关系 */
+  .kpi-value small {
+    font-size: 11.5px;
   }
 
   /* 窄屏组件卡片头部换行：标题独占一行，操作按钮另起一行右对齐 */
