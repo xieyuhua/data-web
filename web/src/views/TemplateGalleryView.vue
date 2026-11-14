@@ -306,7 +306,7 @@ onMounted(load)
         <div class="inline-actions" style="justify-content: space-between; margin-bottom: 14px">
           <div>
             <strong style="font-size: 13px">{{ activeTemplate.name }}</strong>
-            <p style="margin-top: 4px; color: var(--muted); font-size: 9px">{{ activeTemplate.description }}</p>
+            <p style="margin-top: 4px; color: var(--muted); font-size: 11px">{{ activeTemplate.description }}</p>
           </div>
           <span class="tag tag-green">{{ activeTemplate.category }}</span>
         </div>
@@ -315,7 +315,7 @@ onMounted(load)
           <span>{{ widget.title }}</span>
           <small style="color: var(--muted-light)">{{ widget.w }}/12 · 数据集 {{ widget.dataset_id }}</small>
         </div>
-        <p v-if="!activeTemplate.layout?.widgets?.length" style="color: var(--muted); font-size: 10px">该模板暂无组件。</p>
+        <p v-if="!activeTemplate.layout?.widgets?.length" style="color: var(--muted); font-size: 11.5px">该模板暂无组件。</p>
       </template>
     </el-dialog>
 
@@ -346,7 +346,7 @@ onMounted(load)
           <el-input v-model="form.description" type="textarea" :rows="3" style="margin-top: 8px" placeholder="说明适用角色与分析目标" />
         </label>
       </div>
-      <p style="margin-top: 10px; color: var(--muted-light); font-size: 9px">
+      <p style="margin-top: 10px; color: var(--muted-light); font-size: 11px">
         新模板会基于当前演示数据集自动生成指标卡、趋势、区域排行与渠道构成组件。
       </p>
       <template #footer>

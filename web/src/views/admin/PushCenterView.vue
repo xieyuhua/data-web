@@ -626,13 +626,13 @@ onMounted(loadAll)
               </div>
               <div class="schedule-detail">
                 <span>下次执行</span>
-                <strong style="font-size: 9px">
+                <strong style="font-size: 11px">
                   {{ item.enabled && item.next_run_at ? formatDate(item.next_run_at, true) : item.enabled ? '待调度' : '已停用' }}
                 </strong>
               </div>
             </div>
             <div class="schedule-foot">
-              <span style="color: var(--muted-light); font-size: 8px">
+              <span style="color: var(--muted-light); font-size: 10.5px">
                 {{ item.last_run_at ? `上次 ${formatDate(item.last_run_at, true)}` : '尚未执行' }}
                 <template v-if="item.template_name"> · {{ item.template_name }}</template>
               </span>
@@ -697,7 +697,7 @@ onMounted(loadAll)
               </span>
             </div>
             <div class="push-template-meta">
-              <span style="color: var(--muted-light); font-size: 8px">更新 {{ formatDate(item.updated_at) }}</span>
+              <span style="color: var(--muted-light); font-size: 10.5px">更新 {{ formatDate(item.updated_at) }}</span>
               <div class="inline-actions">
                 <button class="btn btn-ghost btn-sm" type="button" @click="openPreview(item)">
                   <Eye :size="13" />
@@ -819,7 +819,7 @@ onMounted(loadAll)
               <el-switch v-model="wechat.dry_run" />
               <span>演练模式：不真实发送，仅记录模拟推送结果</span>
             </div>
-            <p style="margin-top: 12px; color: var(--muted-light); font-size: 8.5px; line-height: 1.7">
+            <p style="margin-top: 12px; color: var(--muted-light); font-size: 11px; line-height: 1.7">
               公众号模板消息需要已认证服务号，模板字段固定为 first / keyword1 / keyword2 / remark。
               接收人需在用户管理中维护微信 OpenID。
             </p>
@@ -855,7 +855,7 @@ onMounted(loadAll)
             <el-table-column label="任务 / 看板" min-width="180">
               <template #default="{ row }">
                 <div style="font-weight: 600">{{ dashboardMap[row.dashboard_id] || '—' }}</div>
-                <div style="color: var(--muted-light); font-size: 8px">
+                <div style="color: var(--muted-light); font-size: 10.5px">
                   任务 #{{ row.subscription_id || '—' }}
                 </div>
               </template>
@@ -876,7 +876,7 @@ onMounted(loadAll)
             <el-table-column prop="title" label="标题" min-width="180" show-overflow-tooltip />
             <el-table-column label="错误信息" min-width="170" show-overflow-tooltip>
               <template #default="{ row }">
-                <span style="color: var(--rose); font-size: 9px">{{ row.error || '—' }}</span>
+                <span style="color: var(--rose); font-size: 11px">{{ row.error || '—' }}</span>
               </template>
             </el-table-column>
             <el-table-column label="操作" width="90" fixed="right">
@@ -1099,7 +1099,7 @@ onMounted(loadAll)
         </span>
       </div>
       <div v-else class="skeleton" style="height: 170px" />
-      <p style="margin-top: 12px; color: var(--muted-light); font-size: 8.5px; line-height: 1.7">
+      <p style="margin-top: 12px; color: var(--muted-light); font-size: 11px; line-height: 1.7">
         预览使用示例指标数据渲染，真实推送时会替换为接收人授权范围内的实时销售数据。
         卡片链接会自动生成带组织权限的分享令牌。
       </p>

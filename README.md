@@ -118,6 +118,30 @@ go build -o bin\api.exe ./cmd/api
 
 访问 <http://localhost:8486> 即为完整站点（`WEB_DIST_DIR` 默认 `../web/dist`）。
 
+### 3.5 局域网访问
+
+服务默认监听全部网卡（`HOST` 留空 → `:8486`），同一局域网的电脑 / 手机 / 平板可直接访问；
+只需要额外放行 Windows 防火墙端口（管理员 PowerShell 执行一次即可）：
+
+```powershell
+New-NetFirewallRule -DisplayName "Qingheng BI 8486" -Direction Inbound `
+  -Protocol TCP -LocalPort 8486 -Action Allow -Profile Any
+```
+
+查看本机局域网地址后访问 `http://<本机IP>:8486`：
+
+```powershell
+Get-NetIPAddress -AddressFamily IPv4 |
+  Where-Object { $_.IPAddress -notlike '127.*' -and $_.IPAddress -notlike '169.254.*' } |
+  Select-Object IPAddress, InterfaceAlias
+```
+
+说明：
+
+- `HOST=` 留空 = 监听全部网卡；填 `127.0.0.1` 则只允许本机访问。
+- `WEB_BASE_URL` 留空时，分享链接 / 企业微信回调按浏览器实际访问的 Host 自动生成，因此局域网访问生成的分享链接会自动带上局域网 IP 与 8486 端口。
+- 若公司网络有多层 NAT 或终端安全软件，需要同步放行 TCP 8486。
+
 ---
 
 ## 4. 演示账号

@@ -99,7 +99,7 @@ async function copyLink() {
           <el-input-number v-model="form.max_views" :min="0" :max="100000" style="width: 100%; margin-top: 8px" />
         </label>
       </div>
-      <p style="margin-top: 8px; color: var(--muted-light); font-size: 9px">访问次数填 0 表示不限制。</p>
+      <p style="margin-top: 8px; color: var(--muted-light); font-size: 11px">访问次数填 0 表示不限制。</p>
     </template>
 
     <template v-else>

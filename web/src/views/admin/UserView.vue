@@ -346,7 +346,7 @@ onMounted(load)
           </div>
 
           <el-table v-else :data="users" style="width: 100%">
-            <el-table-column label="用户" min-width="190">
+            <el-table-column label="用户" min-width="168">
               <template #default="{ row }">
                 <div class="user-cell">
                   <span class="avatar">{{ initials(row.name) }}</span>
@@ -357,22 +357,22 @@ onMounted(load)
                 </div>
               </template>
             </el-table-column>
-            <el-table-column label="角色" width="120">
+            <el-table-column label="角色" width="104">
               <template #default="{ row }">
                 <span class="tag tag-green">{{ roleName(row.role_code) }}</span>
               </template>
             </el-table-column>
-            <el-table-column label="所属组织" min-width="160">
+            <el-table-column label="所属组织" min-width="118">
               <template #default="{ row }">
                 <div class="org-name-cell" style="font-weight: 500">{{ orgName(row.organization_id) }}</div>
-                <span style="color: var(--muted-light); font-size: 8px">
+                <span style="color: var(--muted-light); font-size: 10.5px">
                   {{ orgMap[row.organization_id]?.code || '' }}
                 </span>
               </template>
             </el-table-column>
-            <el-table-column label="消息绑定" min-width="170">
+            <el-table-column label="消息绑定" min-width="158">
               <template #default="{ row }">
-                <div style="display: flex; flex-direction: column; gap: 3px">
+                <div class="bind-cell" style="display: flex; flex-direction: column; gap: 3px">
                   <span class="tag" :class="row.wecom_user_id ? 'tag-green' : ''">
                     企微 {{ row.wecom_user_id || '未绑定' }}
                   </span>
@@ -382,21 +382,21 @@ onMounted(load)
                 </div>
               </template>
             </el-table-column>
-            <el-table-column label="状态" width="80">
+            <el-table-column label="状态" width="66">
               <template #default="{ row }">
                 <span class="tag" :class="statusMeta(row.status).className">
                   {{ statusMeta(row.status).label }}
                 </span>
               </template>
             </el-table-column>
-            <el-table-column label="最后登录" width="130">
+            <el-table-column label="最后登录" width="126">
               <template #default="{ row }">
-                <span style="color: var(--muted); font-size: 9px">
+                <span class="login-cell">
                   {{ row.last_login_at ? formatDate(row.last_login_at, true) : '从未登录' }}
                 </span>
               </template>
             </el-table-column>
-            <el-table-column label="操作" width="150" fixed="right">
+            <el-table-column label="操作" width="118" fixed="right">
               <template #default="{ row }">
                 <div class="inline-actions">
                   <button class="btn btn-ghost btn-sm" type="button" @click="openEdit(row)">
@@ -534,3 +534,23 @@ onMounted(load)
     </el-dialog>
   </div>
 </template>
+
+<style scoped>
+/* 消息绑定列：企微 / 微信 ID 超长时省略，避免撑破列宽 */
+.bind-cell .tag {
+  display: inline-block;
+  max-width: 100%;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  line-height: 1.5;
+}
+
+/* 最后登录列：小字号 + 单行，保持表格行高一致 */
+.login-cell {
+  display: inline-block;
+  color: var(--muted);
+  font-size: 10.5px;
+  white-space: nowrap;
+}
+</style>

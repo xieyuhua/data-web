@@ -246,7 +246,7 @@ async function submit() {
 .wecom-login-tip {
   margin-top: 10px;
   color: var(--muted);
-  font-size: 9.5px;
+  font-size: 11.5px;
   line-height: 1.6;
   text-align: center;
 }
@@ -257,7 +257,7 @@ async function submit() {
   gap: 12px;
   margin: 22px 0 0;
   color: var(--muted-light);
-  font-size: 9px;
+  font-size: 11px;
 }
 
 .login-divider::before,

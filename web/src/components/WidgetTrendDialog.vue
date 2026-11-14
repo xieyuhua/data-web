@@ -308,17 +308,17 @@ onBeforeUnmount(() => {
   grid-template-columns: repeat(4, minmax(0, 1fr));
   margin-bottom: 12px;
 }
-.trend-summary .metric-mini small {
+.trend-summary .metric-mini > small {
   display: block;
-  margin-top: 3px;
+  margin-top: 6px;
   color: var(--muted-light);
-  font-size: 8px;
+  font-size: 11px;
 }
 .source-text {
   display: inline-flex;
   align-items: center;
   gap: 5px;
-  font-size: 10.5px;
+  font-size: 12px;
 }
 .trend-chart {
   height: 300px;
@@ -329,7 +329,7 @@ onBeforeUnmount(() => {
   border-radius: 10px;
   background: var(--amber-soft, #fff8ec);
   color: #b45309;
-  font-size: 10px;
+  font-size: 11.5px;
   line-height: 1.8;
 }
 @media (max-width: 720px) {

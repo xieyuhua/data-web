@@ -181,7 +181,7 @@ watch(
       </div>
     </div>
     <div class="chart-card-body">
-      <p style="white-space: pre-wrap; font-size: 11px; line-height: 1.9; color: var(--muted)">
+      <p style="white-space: pre-wrap; font-size: 12.5px; line-height: 1.85; color: var(--muted)">
         {{ config.content || '点击编辑补充业务说明。' }}
       </p>
     </div>
@@ -214,7 +214,7 @@ watch(
           aria-label="查看指标趋势"
           @click.stop="openTrend()"
         >
-          <TrendingUp :size="13" />
+          <TrendingUp :size="14" />
         </button>
         <button
           v-if="chartData && !showTable && !error"
@@ -224,7 +224,7 @@ watch(
           aria-label="下载图表图片"
           @click.stop="downloadImage"
         >
-          <Download :size="12" />
+          <Download :size="14" />
         </button>
         <div v-if="canToggle" class="widget-view-toggle">
           <button
@@ -234,7 +234,7 @@ watch(
             aria-label="表格视图"
             @click="viewMode = 'table'"
           >
-            <Table2 :size="12" />
+            <Table2 :size="13" />
           </button>
           <button
             type="button"
@@ -243,7 +243,7 @@ watch(
             aria-label="图表视图"
             @click="viewMode = 'chart'"
           >
-            <BarChart3 :size="12" />
+            <BarChart3 :size="13" />
           </button>
         </div>
       </div>
@@ -292,7 +292,7 @@ watch(
 .widget-head-actions {
   display: inline-flex;
   align-items: center;
-  gap: 7px;
+  gap: 6px;
   flex-shrink: 0;
 }
 
@@ -300,8 +300,8 @@ watch(
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 24px;
-  height: 24px;
+  width: 26px;
+  height: 26px;
   padding: 0;
   border: 1px solid var(--line);
   border-radius: 6px;
@@ -316,9 +316,9 @@ watch(
 }
 
 .widget-detail-tip {
-  margin: 0 0 10px;
+  margin: 0 0 12px;
   color: var(--muted-light);
-  font-size: 9px;
+  font-size: 12px;
 }
 
 .widget-view-toggle {
@@ -334,8 +334,8 @@ watch(
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 22px;
-  height: 22px;
+  width: 24px;
+  height: 24px;
   padding: 0;
   border: 0;
   border-radius: 5px;

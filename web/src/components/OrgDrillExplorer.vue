@@ -568,8 +568,12 @@ onBeforeUnmount(() => {
     <div v-else class="metric-mini-grid drill-summary">
       <div class="metric-mini">
         <span>{{ metricInfo?.label || '实际' }}合计</span>
-        <strong><NumText :value="result?.summary?.actual_value" :format="metricFormat" start-compact /></strong>
-        <small>{{ metricFormat === 'percent' ? '' : metricInfo?.unit || '' }}</small>
+        <strong>
+          <NumText :value="result?.summary?.actual_value" :format="metricFormat" start-compact />
+          <!-- 单位紧跟在数值后面同行展示，避免“元”单独掉到下一行显得割裂 -->
+          <small v-if="metricFormat !== 'percent'" class="metric-unit">{{ metricInfo?.unit || '' }}</small>
+        </strong>
+        <small>当前层级汇总口径</small>
       </div>
       <div class="metric-mini">
         <span>目标值</span>
@@ -808,16 +812,17 @@ onBeforeUnmount(() => {
 .scope-badge { display: flex; align-items: center; gap: 10px; }
 .scope-badge > svg { color: var(--emerald); }
 .scope-badge strong { display: block; font-size: 11px; font-weight: 600; }
-.scope-badge span { display: block; margin-top: 2px; color: var(--muted); font-size: 9px; }
+.scope-badge span { display: block; margin-top: 2px; color: var(--muted); font-size: 11px; }
 .drill-filters { flex-wrap: wrap; }
 .breadcrumb-strip { display: flex; align-items: center; gap: 4px; flex-wrap: wrap; min-width: 0; }
-.crumb { border: 0; background: transparent; color: var(--muted); font-size: 10px; padding: 4px 7px; border-radius: 6px; cursor: pointer; display: inline-flex; align-items: center; gap: 4px; }
+.crumb { border: 0; background: transparent; color: var(--muted); font-size: 11.5px; padding: 4px 7px; border-radius: 6px; cursor: pointer; display: inline-flex; align-items: center; gap: 4px; }
 .crumb:hover { background: var(--emerald-soft); color: var(--emerald-deep); }
 .crumb.active { background: var(--emerald-soft); color: var(--emerald-deep); font-weight: 600; }
 .crumb-sep { color: var(--muted-light); flex: none; }
 .drill-modes { grid-template-columns: repeat(3, minmax(0, 1fr)); }
 .drill-modes button { display: inline-flex; align-items: center; justify-content: center; gap: 4px; white-space: nowrap; }
-.drill-summary .metric-mini small { color: var(--muted-light); font-size: 8px; display: block; margin-top: 3px; }
+/* 只让卡片底部的说明文字独占一行，数值内的单位仍与数字同行 */
+.drill-summary .metric-mini > small { color: var(--muted-light); font-size: 11px; display: block; margin-top: 6px; }
 .rate-text.ahead { color: #0f766e; }
 .rate-text.normal { color: #b7791f; }
 .rate-text.behind { color: #c53030; }
@@ -829,15 +834,15 @@ onBeforeUnmount(() => {
 .drill-table-wrap { overflow-x: auto; }
 .drill-name { display: flex; align-items: center; gap: 9px; min-width: 0; }
 .drill-icon { width: 28px; height: 28px; border-radius: 8px; background: #eef7f2; color: var(--emerald); display: inline-flex; align-items: center; justify-content: center; flex: none; }
-.drill-name strong { display: block; font-size: 10.5px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.drill-name span { display: block; margin-top: 2px; color: var(--muted-light); font-size: 8px; }
-.drill-amount { font-size: 10.5px; color: var(--ink); }
+.drill-name strong { display: block; font-size: 12px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.drill-name span { display: block; margin-top: 2px; color: var(--muted-light); font-size: 10.5px; }
+.drill-amount { font-size: 12px; color: var(--ink); }
 .rate-cell { display: flex; align-items: center; gap: 8px; }
 .rate-track { flex: 1; min-width: 52px; height: 5px; border-radius: 999px; background: #e9efe9; overflow: hidden; }
 .rate-fill { display: block; height: 100%; border-radius: inherit; background: #0f766e; }
 .rate-fill.normal { background: #d69e2e; }
 .rate-fill.behind { background: #c53030; }
-.rate-cell b { font-size: 9px; white-space: nowrap; }
+.rate-cell b { font-size: 11px; white-space: nowrap; }
 .drill-arrow { color: var(--emerald); }
 .drill-side { display: flex; flex-direction: column; gap: 14px; }
 .rank-list { padding: 8px 14px 14px; display: flex; flex-direction: column; gap: 11px; }
@@ -845,23 +850,23 @@ onBeforeUnmount(() => {
 .rank-row .rank-index { flex: none; }
 .rank-body { flex: 1; min-width: 0; }
 .rank-top { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
-.rank-top strong { font-size: 9.5px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.rank-top span { font-size: 8.5px; color: var(--muted); flex: none; }
+.rank-top strong { font-size: 11.5px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.rank-top span { font-size: 11px; color: var(--muted); flex: none; }
 .rank-track { height: 4px; border-radius: 999px; background: #edf1ed; margin-top: 5px; overflow: hidden; }
 .rank-track i { display: block; height: 100%; border-radius: inherit; background: linear-gradient(90deg, #14b8a6, #0f766e); }
 .drill-tip { padding: 16px 18px; }
 .drill-tip h3 { display: flex; align-items: center; gap: 6px; font-size: 11px; margin: 0 0 8px; }
-.drill-tip p { color: var(--muted); font-size: 9px; line-height: 1.8; margin: 0; }
-.drill-mini-modes { display: flex; flex-direction: column; gap: 6px; margin-top: 10px; color: var(--muted); font-size: 8.5px; }
+.drill-tip p { color: var(--muted); font-size: 11px; line-height: 1.8; margin: 0; }
+.drill-mini-modes { display: flex; flex-direction: column; gap: 6px; margin-top: 10px; color: var(--muted); font-size: 11px; }
 .drill-mini-modes span { display: flex; align-items: center; gap: 5px; }
-.metric-trend { margin: 0; padding: 0; border: 0; background: transparent; display: inline-flex; align-items: center; gap: 4px; color: var(--ink); font: inherit; font-size: 10.5px; cursor: pointer; border-radius: 5px; transition: color .15s ease, background .15s ease; }
+.metric-trend { margin: 0; padding: 0; border: 0; background: transparent; display: inline-flex; align-items: center; gap: 4px; color: var(--ink); font: inherit; font-size: 12px; cursor: pointer; border-radius: 5px; transition: color .15s ease, background .15s ease; }
 .metric-trend svg { color: var(--emerald); opacity: .55; flex: none; transition: opacity .15s ease; }
 .metric-trend:hover { color: var(--emerald-deep); background: var(--emerald-soft, rgba(20, 184, 166, .1)); }
 .metric-trend:hover svg { opacity: 1; }
 .metric-trend:focus-visible { outline: 2px solid var(--emerald); outline-offset: 2px; }
 .trend-toolbar { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; margin-bottom: 14px; }
 .trend-summary { grid-template-columns: repeat(3, minmax(0, 1fr)); margin-bottom: 12px; }
-.trend-summary .metric-mini small { display: block; margin-top: 3px; color: var(--muted-light); font-size: 8px; }
+.trend-summary .metric-mini > small { display: block; margin-top: 6px; color: var(--muted-light); font-size: 11px; }
 .trend-chart { height: 300px; width: 100%; }
 @media (max-width: 1060px) {
   .drill-grid { grid-template-columns: 1fr; }

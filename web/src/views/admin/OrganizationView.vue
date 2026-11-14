@@ -309,42 +309,42 @@ onMounted(load)
             default-expand-all
             style="width: 100%"
           >
-            <el-table-column label="组织名称" min-width="270">
+            <el-table-column label="组织名称" min-width="230">
               <template #default="{ row }">
                 <div class="org-name-cell">
                   <span class="org-type-icon" :class="row.type === 'region' || row.type === 'store' ? row.type : ''">
                     <component :is="iconFor(row.type)" :size="14" />
                   </span>
                   <div>
-                    <strong style="display: block; font-size: 10.5px">{{ row.name }}</strong>
-                    <span class="mono" style="color: var(--muted-light); font-size: 8px">{{ row.code }}</span>
+                    <strong style="display: block; font-size: 12px">{{ row.name }}</strong>
+                    <span class="mono" style="color: var(--muted-light); font-size: 10.5px">{{ row.code }}</span>
                   </div>
                 </div>
               </template>
             </el-table-column>
-            <el-table-column label="类型" width="92">
+            <el-table-column label="类型" width="80">
               <template #default="{ row }">
                 <span class="tag">{{ orgTypeLabel(row.type) }}</span>
               </template>
             </el-table-column>
-            <el-table-column prop="manager_name" label="负责人" width="110">
+            <el-table-column prop="manager_name" label="负责人" width="92">
               <template #default="{ row }">{{ row.manager_name || '—' }}</template>
             </el-table-column>
-            <el-table-column prop="phone" label="电话" width="130">
+            <el-table-column prop="phone" label="电话" width="114">
               <template #default="{ row }">{{ row.phone || '—' }}</template>
             </el-table-column>
-            <el-table-column prop="address" label="地址" min-width="150" show-overflow-tooltip>
+            <el-table-column prop="address" label="地址" min-width="132" show-overflow-tooltip>
               <template #default="{ row }">{{ row.address || '—' }}</template>
             </el-table-column>
-            <el-table-column label="状态" width="84">
+            <el-table-column label="状态" width="72">
               <template #default="{ row }">
                 <span class="tag" :class="row.status === 'active' ? 'tag-green' : 'tag-red'">
                   {{ row.status === 'active' ? '启用' : '停用' }}
                 </span>
               </template>
             </el-table-column>
-            <el-table-column prop="sort" label="排序" width="70" />
-            <el-table-column label="操作" width="190" fixed="right">
+            <el-table-column prop="sort" label="排序" width="62" />
+            <el-table-column label="操作" width="164" fixed="right">
               <template #default="{ row }">
                 <div class="inline-actions">
                   <button

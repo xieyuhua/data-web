@@ -708,7 +708,7 @@ onMounted(load)
           <component :is="chartIcon(widget.chart_type)" :size="13" />
           <span>{{ widget.title || chartLabel(widget.chart_type) }}</span>
         </div>
-        <p v-if="!layout.widgets.length" style="color: var(--muted-light); font-size: 9px; line-height: 1.7">
+        <p v-if="!layout.widgets.length" style="color: var(--muted-light); font-size: 11px; line-height: 1.7">
           点击上方组件添加到画布。
         </p>
       </div>
@@ -717,7 +717,7 @@ onMounted(load)
       <div class="property-group">
         <label class="property-label">自动刷新（秒）</label>
         <el-input-number v-model="layout.settings.refresh_seconds" :min="0" :max="3600" :step="15" style="width: 100%" />
-        <p style="margin-top: 5px; color: var(--muted-light); font-size: 8px">0 表示关闭，最低 15 秒。</p>
+        <p style="margin-top: 5px; color: var(--muted-light); font-size: 10.5px">0 表示关闭，最低 15 秒。</p>
       </div>
       <div class="property-group" style="display: flex; align-items: center; justify-content: space-between">
         <span class="property-label" style="margin: 0">显示看板标题</span>
@@ -775,7 +775,7 @@ onMounted(load)
       <button class="btn btn-ghost btn-sm" type="button" style="width: 100%" @click="addFilter">
         <Plus :size="12" /> 添加筛选器
       </button>
-      <p style="margin-top: 7px; color: var(--muted-light); font-size: 8px; line-height: 1.7">
+      <p style="margin-top: 7px; color: var(--muted-light); font-size: 10.5px; line-height: 1.7">
         数据集 SQL 用 <code v-text="'{{filter:channel}}'"></code> 接收筛选值，空值写法：
         <code v-text="'AND ({{filter:channel}} = \'\' OR channel = {{filter:channel}})'"></code>。
             多选筛选器用 <code v-text="'{{filter_in:channel}}'"></code> 展开为 <code>'a','b'</code>，配合 <code v-text="'{{filter_has:channel}}'"></code> 判断是否已选择：
@@ -789,7 +789,7 @@ onMounted(load)
           <button class="icon-btn" type="button" title="返回" @click="goBack"><ArrowLeft :size="16" /></button>
           <div>
             <el-input v-model="meta.name" placeholder="看板名称" style="width: min(340px, 52vw)" />
-            <div style="margin-top: 5px; color: var(--muted-light); font-size: 8.5px">
+            <div style="margin-top: 5px; color: var(--muted-light); font-size: 11px">
               {{ isEdit ? '编辑已发布看板' : '新看板 · 保存后生成编码' }} · {{ totalWidgets }} 个组件
             </div>
           </div>
@@ -851,7 +851,7 @@ onMounted(load)
             <div v-if="widget.chart_type === 'kpi'" class="mock-kpis">
               <div v-for="index in 4" :key="index" class="mock-kpi"><i /><b /></div>
             </div>
-            <p v-else-if="widget.chart_type === 'text'" style="color: var(--muted); font-size: 9.5px; line-height: 1.8; text-align: left">
+            <p v-else-if="widget.chart_type === 'text'" style="color: var(--muted); font-size: 11.5px; line-height: 1.8; text-align: left">
               {{ widget.config.content || '业务说明' }}
             </p>
             <div
@@ -870,7 +870,7 @@ onMounted(load)
               <div style="width: 112px; height: 112px; border-radius: 50%; background: conic-gradient(from 270deg, #0f766e 0 55%, #e6ede7 55% 100%)" />
               <div style="position: absolute; left: 14px; top: 14px; width: 84px; height: 84px; border-radius: 50%; background: #fff" />
             </div>
-            <div v-else-if="widget.chart_type === 'table'" style="width: 100%; font-size: 8px; color: var(--muted)">
+            <div v-else-if="widget.chart_type === 'table'" style="width: 100%; font-size: 10.5px; color: var(--muted)">
               <div v-for="index in 4" :key="index" style="display: flex; gap: 6px; padding: 5px 0; border-bottom: 1px solid var(--line-soft)">
                 <span style="width: 30%">门店 {{ index }}</span>
                 <span style="flex: 1; height: 5px; margin-top: 4px; border-radius: 3px; background: #e3ece6" />
@@ -916,7 +916,7 @@ onMounted(load)
           <el-option value="users" label="指定人员" />
           <el-option value="orgs" label="指定组织" />
         </el-select>
-        <p style="margin-top: 5px; color: var(--muted-light); font-size: 8px">
+        <p style="margin-top: 5px; color: var(--muted-light); font-size: 10.5px">
           仅在可见范围内的用户能在首页看到该看板，分享与推送同样受限制。
         </p>
       </div>
@@ -935,7 +935,7 @@ onMounted(load)
       <div v-if="access.visibility_mode === 'orgs'" class="property-group">
         <label class="property-label">可见组织</label>
         <OrgTreeSelect v-model="access.visible_org_ids" multiple :data="orgTree" placeholder="选择组织" />
-        <p style="margin-top: 5px; color: var(--muted-light); font-size: 8px">
+        <p style="margin-top: 5px; color: var(--muted-light); font-size: 10.5px">
           组织内用户及其下级组织成员可见。
         </p>
       </div>
@@ -945,7 +945,7 @@ onMounted(load)
           <el-option value="role_org" label="按组织层级（默认）" />
           <el-option value="all" label="全量数据" />
         </el-select>
-        <p style="margin-top: 5px; color: var(--muted-light); font-size: 8px">
+        <p style="margin-top: 5px; color: var(--muted-light); font-size: 10.5px">
           全量数据模式下，有权限的查看者看到所有组织汇总。
         </p>
       </div>
@@ -1014,7 +1014,7 @@ onMounted(load)
               图表
             </button>
           </div>
-          <p style="margin-top: 6px; color: var(--muted-light); font-size: 8.5px; line-height: 1.6">
+          <p style="margin-top: 6px; color: var(--muted-light); font-size: 11px; line-height: 1.6">
             自动：1 行数据默认表格，多行数据默认图表；阅读时仍可随时切换。
           </p>
         </div>
@@ -1037,7 +1037,7 @@ onMounted(load)
               :disabled="!filter.key"
             />
           </el-select>
-          <p style="margin-top: 6px; color: var(--muted-light); font-size: 8.5px; line-height: 1.6">
+          <p style="margin-top: 6px; color: var(--muted-light); font-size: 11px; line-height: 1.6">
             点击图表分类时自动写入该全局筛选器，整份看板一起刷新，实现图表联动。
           </p>
         </div>
@@ -1063,7 +1063,7 @@ onMounted(load)
           <div v-if="previewColumns.length" style="display: flex; flex-wrap: wrap; gap: 4px; margin-top: 7px">
             <span v-for="column in previewColumns" :key="column" class="tag">{{ column }}</span>
           </div>
-          <p v-if="fieldError" style="margin-top: 6px; color: #b4544b; font-size: 8.5px">{{ fieldError }}</p>
+          <p v-if="fieldError" style="margin-top: 6px; color: #b4544b; font-size: 11px">{{ fieldError }}</p>
         </div>
 
         <div
@@ -1085,7 +1085,7 @@ onMounted(load)
               style="width: 108px"
             />
           </div>
-          <p style="margin-top: 6px; color: var(--muted-light); font-size: 8.5px; line-height: 1.6">
+          <p style="margin-top: 6px; color: var(--muted-light); font-size: 11px; line-height: 1.6">
             排序字段默认取第一个指标系列；Top N 填 0 表示不限制，适合排行榜和重点分类展示。
           </p>
         </div>
@@ -1162,7 +1162,7 @@ onMounted(load)
                 </el-select>
               </div>
             </div>
-            <p v-if="!selected.config.yFields?.length" style="color: var(--muted-light); font-size: 8.5px">
+            <p v-if="!selected.config.yFields?.length" style="color: var(--muted-light); font-size: 11px">
               添加指标后即可展示趋势；也可以点击“自动填充”。
             </p>
           </div>
@@ -1259,7 +1259,7 @@ onMounted(load)
             <label class="property-label">单位</label>
             <el-input v-model="selected.config.unit" placeholder="元" />
           </div>
-          <p style="color: var(--muted); font-size: 8.5px; line-height: 1.7">
+          <p style="color: var(--muted); font-size: 11px; line-height: 1.7">
             优先使用达成率字段；未配置时按「实际值 / 目标值 × 100%」计算，取结果第一行。
           </p>
         </template>
@@ -1311,7 +1311,7 @@ onMounted(load)
               </el-select>
               <el-input-number v-model="selected.config.conditional.threshold" size="small" :controls="false" style="width: 100px" />
             </div>
-            <p style="color: var(--muted-light); font-size: 8.5px; line-height: 1.6">
+            <p style="color: var(--muted-light); font-size: 11px; line-height: 1.6">
               满足条件的单元格会高亮，可用于毛利预警、低达成率提醒等场景。
             </p>
           </div>

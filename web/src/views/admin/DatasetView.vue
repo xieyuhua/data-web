@@ -726,7 +726,7 @@ onBeforeUnmount(disposeSqlPreviewChart)
           <span class="sql-hint" v-text="'{{filter:channel}}'"></span>
           <span class="sql-hint" v-text="'{{filter_in:channel}}'"></span>
             <span class="sql-hint" v-text="'{{filter_has:channel}}'"></span>
-          <span style="color: var(--muted-light); font-size: 8.5px; align-self: center">
+          <span style="color: var(--muted-light); font-size: 11px; align-self: center">
             启用数据权限时必须包含 <span v-text="'{{org_scope}}'"></span>
           </span>
         </div>
@@ -877,7 +877,7 @@ onBeforeUnmount(disposeSqlPreviewChart)
           <div style="font-family: var(--font-display); font-size: 20px; font-weight: 600">
             数据预览 · {{ previewDataset?.name }}
           </div>
-          <div style="margin-top: 4px; color: var(--muted); font-size: 9px">
+          <div style="margin-top: 4px; color: var(--muted); font-size: 11px">
             预览结果受当前管理员账号的组织范围限制，最多 2000 行。
           </div>
         </div>
@@ -936,7 +936,7 @@ onBeforeUnmount(disposeSqlPreviewChart)
           <div style="font-family: var(--font-display); font-size: 20px; font-weight: 600">
             一键生成看板
           </div>
-          <div style="margin-top: 4px; color: var(--muted); font-size: 9px">
+          <div style="margin-top: 4px; color: var(--muted); font-size: 11px">
             数据集：{{ dashboardDataset?.name }} · 生成后可在编辑器中继续调整
           </div>
         </div>
@@ -1013,7 +1013,7 @@ onBeforeUnmount(disposeSqlPreviewChart)
 .sql-preview-table { max-height: 300px; overflow: auto; border-radius: 8px; }
 .sql-preview-table .data-table { min-width: 100%; }
 .sql-preview-chart { height: 260px; width: 100%; margin-top: 8px; }
-.sql-preview-tip { margin: 8px 0 0; color: var(--muted-light); font-size: 9px; }
+.sql-preview-tip { margin: 8px 0 0; color: var(--muted-light); font-size: 11px; }
 .sql-preview-config {
   display: flex;
   align-items: center;
@@ -1027,7 +1027,7 @@ onBeforeUnmount(disposeSqlPreviewChart)
 }
 .sql-preview-config-label {
   color: var(--muted);
-  font-size: 9px;
+  font-size: 11px;
   font-weight: 600;
   letter-spacing: 0.04em;
 }
@@ -1035,7 +1035,7 @@ onBeforeUnmount(disposeSqlPreviewChart)
 .sql-preview-auto-tip {
   margin-left: auto;
   color: var(--muted-light);
-  font-size: 8.5px;
+  font-size: 11px;
 }
 @media (max-width: 720px) {
   .sql-preview-block .table-toolbar { flex-direction: column; align-items: stretch; gap: 10px; }

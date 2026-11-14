@@ -10,7 +10,9 @@ import (
 
 // Config 平台运行配置，全部来自环境变量或 .env 文件。
 type Config struct {
-	Port            string
+	Port string
+	// Host 监听地址：留空表示监听全部网卡（0.0.0.0 / ::），局域网可直接访问
+	Host            string
 	DBDriver        string
 	DSN             string
 	JWTSecret       string
@@ -31,6 +33,7 @@ func Load() Config {
 	port := env("PORT", "8486")
 	return Config{
 		Port:      port,
+		Host:      env("HOST", ""),
 		DBDriver:  env("DB_DRIVER", "sqlite"),
 		DSN:       env("DB_DSN", "data/bi.db"),
 		JWTSecret: env("JWT_SECRET", "change-me-in-production-bi-platform-2026"),
@@ -73,8 +76,15 @@ func loadDotEnv() {
 	}
 }
 
-// Address 返回 HTTP 监听地址（固定端口 8486，可通过 PORT 覆盖）。
-func (c Config) Address() string { return ":" + c.Port }
+// Address 返回 HTTP 监听地址（默认监听全部网卡，可用 HOST / PORT 覆盖）。
+// 说明：HOST 留空时返回「:端口」，Go 会同时监听 IPv4 与 IPv6 的任意地址，
+// 因此同一局域网内的其它设备可直接通过服务器 IP 访问。
+func (c Config) Address() string {
+	if c.Host == "" {
+		return ":" + c.Port
+	}
+	return c.Host + ":" + c.Port
+}
 
 // Validate 校验关键配置：端口、JWT 密钥长度、数据库驱动类型。
 func (c Config) Validate() error {

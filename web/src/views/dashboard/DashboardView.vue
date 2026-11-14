@@ -475,7 +475,7 @@ onBeforeUnmount(() => {
           </p>
         </div>
 
-      <div class="view-toolbar">
+        <div class="view-toolbar">
           <div v-if="activeTab === 'dashboard'" class="date-range">
             <button :class="{ active: rangeKey === '7d' }" type="button" @click="chooseRange(7)">近 7 天</button>
             <button :class="{ active: rangeKey === '30d' }" type="button" @click="chooseRange(30)">近 30 天</button>
@@ -611,7 +611,7 @@ onBeforeUnmount(() => {
           </EmptyBlock>
         </div>
 
-        <div class="scope-note" style="margin-top: 18px; margin-bottom: 0">
+        <div class="scope-note" style="margin-top: 16px; margin-bottom: 0">
           <CalendarRange :size="14" />
           <span>
             数据由受控 SQL 数据集实时查询，单次最多 2000 行，查询超时 10 秒。
@@ -665,8 +665,8 @@ onBeforeUnmount(() => {
   margin-bottom: 14px;
 }
 
-.view-tabs { display: inline-flex; gap: 4px; padding: 4px; margin-bottom: 16px; border-radius: 10px; background: #f2f6f3; border: 1px solid var(--line-soft); }
-.view-tabs button { border: 0; background: transparent; color: var(--muted); font-size: 11px; display: inline-flex; align-items: center; gap: 6px; padding: 7px 14px; border-radius: 8px; cursor: pointer; transition: all .16s ease; }
+.view-tabs { display: inline-flex; gap: 4px; padding: 4px; margin-bottom: 12px; border-radius: 10px; background: #f2f6f3; border: 1px solid var(--line-soft); }
+.view-tabs button { border: 0; background: transparent; color: var(--muted); font-size: 12.5px; display: inline-flex; align-items: center; gap: 6px; padding: 8px 15px; border-radius: 8px; cursor: pointer; transition: all .16s ease; }
 .view-tabs button:hover { color: var(--emerald-deep); }
 .view-tabs button.active { background: #fff; color: var(--emerald-deep); font-weight: 600; box-shadow: 0 1px 2px rgba(16, 42, 35, .08); }
 /* 收藏 / 置顶按钮选中态：与首页卡片的配色保持一致 */

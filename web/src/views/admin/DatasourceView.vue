@@ -291,11 +291,11 @@ onMounted(load)
               </div>
               <div
                 class="mono"
-                style="margin-top: 10px; padding: 8px 10px; border-radius: 8px; background: var(--surface-soft); color: var(--muted); font-size: 8px; word-break: break-all"
+                style="margin-top: 10px; padding: 8px 10px; border-radius: 8px; background: var(--surface-soft); color: var(--muted); font-size: 10.5px; word-break: break-all"
               >
                 {{ item.dsn_masked || '—' }}
               </div>
-              <div style="margin-top: 8px; display: flex; align-items: center; gap: 6px; font-size: 8.5px">
+              <div style="margin-top: 8px; display: flex; align-items: center; gap: 6px; font-size: 11px">
                 <template v-if="testState[item.id]?.loading">
                   <PlugZap :size="12" /> 测试中…
                 </template>
@@ -408,7 +408,7 @@ onMounted(load)
             :placeholder="editingId ? '留空表示不修改，当前连接串保持不变' : dsnExample"
             style="margin-top: 8px"
           />
-          <span style="display: block; margin-top: 6px; color: var(--muted-light); font-size: 8.5px">
+          <span style="display: block; margin-top: 6px; color: var(--muted-light); font-size: 11px">
             示例：<span v-text="dsnExample" />
           </span>
         </label>

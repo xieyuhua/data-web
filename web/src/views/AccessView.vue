@@ -131,7 +131,7 @@ onMounted(load)
               >
                 <span>{{ org.name }}</span>
                 <span class="tag">{{ orgTypeLabel(org.type) }}</span>
-                <span style="color: var(--muted-light); font-size: 8px">{{ org.code }}</span>
+                <span style="color: var(--muted-light); font-size: 10.5px">{{ org.code }}</span>
               </div>
               <div v-if="!orgChain.length" class="scope-chain-item active">
                 <span>未绑定组织，按角色兜底策略处理</span>

@@ -428,15 +428,15 @@ onMounted(async () => {
         <el-table-column label="组织" min-width="180">
           <template #default="{ row }">
             <div>
-              <strong style="font-size: 10.5px">{{ row.org_name || '—' }}</strong>
-              <div style="color: var(--muted-light); font-size: 8px; margin-top: 2px">{{ row.name }}</div>
+              <strong style="font-size: 12px">{{ row.org_name || '—' }}</strong>
+              <div style="color: var(--muted-light); font-size: 10.5px; margin-top: 2px">{{ row.name }}</div>
             </div>
           </template>
         </el-table-column>
         <el-table-column label="周期" width="150">
           <template #default="{ row }">
             <span class="tag">{{ periodTypeLabel(row.period_type) }}</span>
-            <span style="margin-left: 5px; font-size: 9px; color: var(--muted)">{{ row.period }}</span>
+            <span style="margin-left: 5px; font-size: 11px; color: var(--muted)">{{ row.period }}</span>
           </template>
         </el-table-column>
         <el-table-column label="任务类型" width="105">
@@ -588,5 +588,5 @@ onMounted(async () => {
 .rate-fill { display: block; height: 100%; border-radius: inherit; background: #0f766e; }
 .rate-fill.normal { background: #d69e2e; }
 .rate-fill.behind { background: #c53030; }
-.rate-cell b { font-size: 9px; white-space: nowrap; }
+.rate-cell b { font-size: 11px; white-space: nowrap; }
 </style>

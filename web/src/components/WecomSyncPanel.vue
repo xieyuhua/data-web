@@ -525,7 +525,7 @@ onBeforeUnmount(stopPolling)
 
 .wecom-summary-item span {
   color: var(--muted);
-  font-size: 9px;
+  font-size: 11px;
 }
 
 .wecom-summary-item strong {
@@ -551,7 +551,7 @@ onBeforeUnmount(stopPolling)
 .wecom-hint {
   margin-top: 10px;
   color: var(--muted);
-  font-size: 9px;
+  font-size: 11px;
   line-height: 1.7;
 }
 
@@ -565,14 +565,14 @@ onBeforeUnmount(stopPolling)
 
 .wecom-switch-row strong {
   display: block;
-  font-size: 10.5px;
+  font-size: 12px;
 }
 
 .wecom-switch-row span {
   display: block;
   margin-top: 3px;
   color: var(--muted);
-  font-size: 9px;
+  font-size: 11px;
   line-height: 1.5;
 }
 
@@ -586,7 +586,7 @@ onBeforeUnmount(stopPolling)
   display: block;
   margin-bottom: 8px;
   color: var(--muted);
-  font-size: 9px;
+  font-size: 11px;
 }
 
 .wecom-rules-grid {
@@ -606,13 +606,13 @@ onBeforeUnmount(stopPolling)
   gap: 8px;
   padding: 12px 14px;
   border-radius: 12px;
-  font-size: 9.5px;
+  font-size: 11.5px;
   line-height: 1.6;
 }
 
 .wecom-test strong {
   display: block;
-  font-size: 10.5px;
+  font-size: 12px;
 }
 
 .wecom-test span {
@@ -651,7 +651,7 @@ onBeforeUnmount(stopPolling)
   align-items: center;
   justify-content: space-between;
   margin-bottom: 10px;
-  font-size: 10.5px;
+  font-size: 12px;
 }
 
 .wecom-job-bar {
@@ -674,7 +674,7 @@ onBeforeUnmount(stopPolling)
   gap: 6px 16px;
   margin-top: 10px;
   color: var(--muted);
-  font-size: 9px;
+  font-size: 11px;
 }
 
 .wecom-job-metrics b {
@@ -685,14 +685,14 @@ onBeforeUnmount(stopPolling)
 
 .wecom-job-msg {
   margin-top: 8px;
-  font-size: 9.5px;
+  font-size: 11.5px;
   line-height: 1.6;
 }
 
 .wecom-job-time {
   margin-top: 4px;
   color: var(--muted-light);
-  font-size: 8.5px;
+  font-size: 11px;
 }
 
 .wecom-job-error {
@@ -703,7 +703,7 @@ onBeforeUnmount(stopPolling)
   border-radius: 8px;
   background: #fdf4f5;
   color: #b33a4c;
-  font-size: 8.5px;
+  font-size: 11px;
   line-height: 1.6;
   white-space: pre-wrap;
 }
@@ -719,7 +719,7 @@ onBeforeUnmount(stopPolling)
   grid-template-columns: 62px 42px 62px 1fr auto;
   align-items: center;
   gap: 8px;
-  font-size: 9px;
+  font-size: 11px;
 }
 
 .wecom-history-row > span:nth-child(4) {
@@ -731,7 +731,7 @@ onBeforeUnmount(stopPolling)
 
 .wecom-history-time {
   color: var(--muted-light);
-  font-size: 8.5px;
+  font-size: 11px;
 }
 
 /* 窄屏自适应：概览与层级映射改为单列，历史记录隐藏次要列 */

@@ -328,7 +328,7 @@ onBeforeUnmount(() => {
         <AppBrand />
         <div>
           <strong>青衡 BI</strong>
-          <span style="display: block; color: var(--muted-light); font-size: 8px; letter-spacing: 0.08em">
+          <span style="display: block; margin-top: 3px; color: var(--muted-light); font-size: 11.5px; letter-spacing: 0.08em">
             AUTHORIZED VIEW
           </span>
         </div>
@@ -360,7 +360,7 @@ onBeforeUnmount(() => {
 
       <div v-else-if="error && !dashboard" class="panel">
         <EmptyBlock :title="errorTitle" :description="error">
-          <p style="color: var(--muted-light); font-size: 9px; text-align: center">
+          <p style="color: var(--muted-light); font-size: 11.5px; line-height: 1.7; text-align: center">
             请联系看板创建者重新生成授权链接。链接可能已过期、被撤销或访问次数已用尽。
           </p>
           <button class="btn btn-secondary btn-sm" type="button" @click="load">
@@ -387,7 +387,7 @@ onBeforeUnmount(() => {
           </div>
         </div>
 
-        <div class="scope-note" style="margin-bottom: 16px">
+        <div class="scope-note" style="margin-bottom: 12px">
           <ShieldCheck :size="14" />
           <span>
             本页通过服务端分享令牌校验，只展示创建者授权范围内的组织数据。
@@ -404,7 +404,7 @@ onBeforeUnmount(() => {
           </button>
         </div>
 
-        <div v-show="activeTab === 'dashboard'" class="view-toolbar" style="margin-bottom: 18px">
+        <div v-show="activeTab === 'dashboard'" class="view-toolbar" style="margin-bottom: 16px">
           <div class="date-range">
             <button :class="{ active: rangeKey === '7d' }" type="button" @click="chooseRange(7)">近 7 天</button>
             <button :class="{ active: rangeKey === '30d' }" type="button" @click="chooseRange(30)">近 30 天</button>
@@ -428,7 +428,7 @@ onBeforeUnmount(() => {
           </button>
         </div>
 
-        <div v-if="error" class="scope-note" style="margin-bottom: 16px; color: var(--rose)">
+        <div v-if="error" class="scope-note" style="margin-bottom: 12px; color: var(--rose)">
           <ShieldCheck :size="14" />
           <span>{{ error }}</span>
         </div>
@@ -464,7 +464,7 @@ onBeforeUnmount(() => {
           :initial-mode="drillMode"
         />
 
-        <div class="public-meta" style="margin-top: 22px; text-align: center">
+        <div class="public-meta" style="margin-top: 24px; text-align: center">
           <CalendarRange :size="12" style="vertical-align: -2px" />
           数据由受控 SQL 实时查询，单次最多 2000 行 · 青衡 BI
         </div>
@@ -490,8 +490,8 @@ onBeforeUnmount(() => {
 .public-page.bi-fullscreen { min-height: 100vh; background: #f6f9f7; }
 .public-page.bi-fullscreen .public-content { max-width: none; }
 
-.view-tabs { display: inline-flex; gap: 4px; padding: 4px; margin-bottom: 16px; border-radius: 10px; background: #f2f6f3; border: 1px solid var(--line-soft); }
-.view-tabs button { border: 0; background: transparent; color: var(--muted); font-size: 11px; display: inline-flex; align-items: center; gap: 6px; padding: 7px 14px; border-radius: 8px; cursor: pointer; transition: all .16s ease; }
+.view-tabs { display: inline-flex; gap: 4px; padding: 4px; margin-bottom: 12px; border-radius: 10px; background: #f2f6f3; border: 1px solid var(--line-soft); }
+.view-tabs button { border: 0; background: transparent; color: var(--muted); font-size: 12.5px; display: inline-flex; align-items: center; gap: 6px; padding: 8px 15px; border-radius: 8px; cursor: pointer; transition: all .16s ease; }
 .view-tabs button:hover { color: var(--emerald-deep); }
 .view-tabs button.active { background: #fff; color: var(--emerald-deep); font-weight: 600; box-shadow: 0 1px 2px rgba(16, 42, 35, .08); }
 @media (max-width: 640px) {

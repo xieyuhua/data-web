@@ -141,10 +141,10 @@ function categoryAxis(data, horizontal = false) {
     axisTick: { show: false },
     axisLabel: {
       color: '#74867d',
-      fontSize: 9,
+      fontSize: 11,
       interval: 0,
       hideOverlap: true,
-      width: horizontal ? 74 : 58,
+      width: horizontal ? 86 : 72,
       overflow: 'truncate',
     },
   }
@@ -155,9 +155,9 @@ function valueAxis(name = '') {
   return {
     type: 'value',
     name,
-    nameTextStyle: { color: '#94a39b', fontSize: 9 },
+    nameTextStyle: { color: '#94a39b', fontSize: 11 },
     splitLine: { lineStyle: { color: '#edf1ed', type: 'dashed' } },
-    axisLabel: { color: '#94a39b', fontSize: 9, formatter: (value) => axisNumber(value) },
+    axisLabel: { color: '#94a39b', fontSize: 11, formatter: (value) => axisNumber(value) },
   }
 }
 
@@ -169,7 +169,7 @@ function tooltipBase(config, trigger = 'axis') {
     axisPointer: trigger === 'axis' ? { type: 'shadow' } : undefined,
     backgroundColor: 'rgba(16, 42, 35, 0.94)',
     borderWidth: 0,
-    textStyle: { color: '#eafff5', fontSize: 11 },
+    textStyle: { color: '#eafff5', fontSize: 12 },
     valueFormatter: (value) => formatValue(value, 'number', config.unit || ''),
   }
 }
@@ -186,10 +186,10 @@ function buildLineOption(areaMode = false) {
   return {
     color: palette,
     animationDuration: 420,
-    grid: { left: 8, right: hasRightAxis ? 22 : 16, top: 34, bottom: 8, containLabel: true },
+    grid: { left: 8, right: hasRightAxis ? 22 : 16, top: 40, bottom: 8, containLabel: true },
     tooltip: tooltipBase(config, 'axis'),
     legend: seriesFields.length > 1
-      ? { top: 0, right: 4, icon: 'circle', itemWidth: 7, itemHeight: 7, textStyle: { color: '#6b7d74', fontSize: 9 } }
+      ? { top: 0, right: 4, icon: 'circle', itemWidth: 8, itemHeight: 8, itemGap: 14, textStyle: { color: '#6b7d74', fontSize: 11 } }
       : undefined,
     xAxis: {
       ...categoryAxis(rows().map((row) => row[xIndex])),
@@ -207,7 +207,7 @@ function buildLineOption(areaMode = false) {
         symbolSize: 5,
         showSymbol: rows().length <= 31,
         yAxisIndex: field.axis,
-        label: { show: config.showLabel === true, position: 'top', color: '#74867d', fontSize: 8 },
+        label: { show: config.showLabel === true, position: 'top', color: '#74867d', fontSize: 10 },
         lineStyle: { width: 2, color },
         itemStyle: { color },
         areaStyle: useArea
@@ -245,13 +245,13 @@ function buildBarOption({ horizontal = false, stacked = false } = {}) {
     grid: {
       left: 8,
       right: horizontal ? 26 : 12,
-      top: seriesFields.length > 1 ? 34 : 16,
+      top: seriesFields.length > 1 ? 40 : 20,
       bottom: 8,
       containLabel: true,
     },
     tooltip: tooltipBase(config, 'axis'),
     legend: seriesFields.length > 1
-      ? { top: 0, right: 4, icon: 'circle', itemWidth: 7, itemHeight: 7, textStyle: { color: '#6b7d74', fontSize: 9 } }
+      ? { top: 0, right: 4, icon: 'circle', itemWidth: 8, itemHeight: 8, itemGap: 14, textStyle: { color: '#6b7d74', fontSize: 11 } }
       : undefined,
     xAxis: horizontal ? value : category,
     yAxis: horizontal ? category : value,
@@ -267,7 +267,7 @@ function buildBarOption({ horizontal = false, stacked = false } = {}) {
           show: config.showLabel === true,
           position: horizontal ? 'right' : 'top',
           color: '#74867d',
-          fontSize: 8,
+          fontSize: 10,
         },
         itemStyle: {
           borderRadius: horizontal ? [0, 5, 5, 0] : [5, 5, 0, 0],
@@ -299,9 +299,9 @@ function buildComboOption() {
   return {
     color: palette,
     animationDuration: 420,
-    grid: { left: 8, right: hasRightAxis ? 22 : 16, top: 36, bottom: 8, containLabel: true },
+    grid: { left: 8, right: hasRightAxis ? 22 : 16, top: 40, bottom: 8, containLabel: true },
     tooltip: tooltipBase(config, 'axis'),
-    legend: { top: 0, right: 4, icon: 'circle', itemWidth: 7, itemHeight: 7, textStyle: { color: '#6b7d74', fontSize: 9 } },
+    legend: { top: 0, right: 4, icon: 'circle', itemWidth: 8, itemHeight: 8, itemGap: 14, textStyle: { color: '#6b7d74', fontSize: 11 } },
     xAxis: categoryAxis(rows().map((row) => row[xIndex])),
     yAxis: hasRightAxis ? [valueAxis(), valueAxis()] : [valueAxis()],
     series: seriesFields.map((field, index) => {
@@ -312,7 +312,7 @@ function buildComboOption() {
         yAxisIndex: field.axis,
         itemStyle: { color },
         data: rows().map((row) => toNumber(row[indexInRow])),
-        label: { show: config.showLabel === true, position: 'top', color: '#74867d', fontSize: 8 },
+        label: { show: config.showLabel === true, position: 'top', color: '#74867d', fontSize: 10 },
       }
       if (field.type === 'line') {
         return {
@@ -408,10 +408,10 @@ function buildDonutOption() {
       right: 0,
       top: 'center',
       icon: 'circle',
-      itemWidth: 7,
-      itemHeight: 7,
-      itemGap: 11,
-      textStyle: { color: '#74867d', fontSize: 9 },
+      itemWidth: 8,
+      itemHeight: 8,
+      itemGap: 12,
+      textStyle: { color: '#74867d', fontSize: 11 },
     },
     series: [
       {
@@ -424,11 +424,11 @@ function buildDonutOption() {
         label: {
           show: config.showLabel === true,
           color: '#74867d',
-          fontSize: 9,
+          fontSize: 11,
           formatter: '{b}\n{d}%',
         },
         labelLine: { show: config.showLabel === true, length: 6, length2: 6 },
-        emphasis: { label: { show: true, fontSize: 10, fontWeight: 700, formatter: '{b}\n{d}%' } },
+        emphasis: { label: { show: true, fontSize: 12, fontWeight: 700, formatter: '{b}\n{d}%' } },
         data: rows().map((row) => ({ name: row[xIndex], value: toNumber(row[yIndex]) })),
       },
     ],
@@ -478,7 +478,7 @@ function buildGaugeOption() {
         anchor: { show: true, size: 9, itemStyle: { color } },
         axisTick: { distance: -14, length: 5, lineStyle: { color: '#fff', width: 1 } },
         splitLine: { distance: -14, length: 12, lineStyle: { color: '#fff', width: 2 } },
-        axisLabel: { distance: 18, color: '#94A39B', fontSize: 9 },
+        axisLabel: { distance: 18, color: '#94A39B', fontSize: 11 },
         detail: {
           offsetCenter: [0, '36%'],
           fontSize: 22,
@@ -486,7 +486,7 @@ function buildGaugeOption() {
           color,
           formatter: () => `${rate.toFixed(1)}%`,
         },
-        title: { offsetCenter: [0, '66%'], color: '#74867d', fontSize: 10 },
+        title: { offsetCenter: [0, '66%'], color: '#74867d', fontSize: 12 },
         data: [{ value: capped, name: '目标达成率' }],
       },
     ],
@@ -496,7 +496,7 @@ function buildGaugeOption() {
             type: 'text',
             left: 'center',
             bottom: 2,
-            style: { text: footText, fill: '#94A39B', fontSize: 9 },
+            style: { text: footText, fill: '#94A39B', fontSize: 11 },
           },
         ]
       : [],

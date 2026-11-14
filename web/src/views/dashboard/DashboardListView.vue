@@ -473,7 +473,7 @@ onMounted(load)
   border: 0;
   background: transparent;
   color: var(--brand);
-  font-size: 10px;
+  font-size: 11.5px;
   cursor: pointer;
 }
 .link-btn:hover {
@@ -513,7 +513,7 @@ onMounted(load)
 }
 .recent-time {
   color: var(--muted-light);
-  font-size: 9px;
+  font-size: 11px;
 }
 
 /* 收藏筛选胶囊 */
@@ -532,7 +532,7 @@ onMounted(load)
   border-radius: 8px;
   background: rgba(180, 83, 9, 0.12);
   color: #b45309;
-  font-size: 9px;
+  font-size: 11px;
 }
 
 @media (max-width: 900px) {

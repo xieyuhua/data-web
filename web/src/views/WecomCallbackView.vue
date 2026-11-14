@@ -164,7 +164,7 @@ function goHome() {
 .wecom-callback-card p {
   margin-top: 10px;
   color: var(--muted);
-  font-size: 10.5px;
+  font-size: 12px;
   line-height: 1.7;
 }
 

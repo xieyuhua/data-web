@@ -9,7 +9,8 @@ services:
       DB_DRIVER: sqlite
       DB_DSN: data/bi.db
       JWT_SECRET: ${JWT_SECRET:-change-me-in-production-bi-platform-2026}
-      WEB_BASE_URL: ${WEB_BASE_URL:-http://localhost:8486}
+      # 留空 = 按访问请求的 Host 自动生成分享链接（局域网 / 反向代理场景更省心）
+      WEB_BASE_URL: ${WEB_BASE_URL:-}
       CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:8486}
       APP_TIMEZONE: Asia/Shanghai
       AUTO_MIGRATE: "true"
