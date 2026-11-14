@@ -14,21 +14,28 @@ import (
 	"gorm.io/gorm"
 )
 
+// OrganizationService 组织架构业务服务。
 type OrganizationService struct {
 	repo *repository.OrganizationRepository
 }
 
+// NewOrganizationService 创建组织服务。
 func NewOrganizationService(repo *repository.OrganizationRepository) *OrganizationService {
 	return &OrganizationService{repo: repo}
 }
 
+// Tree 查询组织树。
 func (s *OrganizationService) Tree() ([]model.Organization, error) { return s.repo.Tree() }
-func (s *OrganizationService) All() ([]model.Organization, error)  { return s.repo.All() }
 
+// All 查询全部组织（平铺）。
+func (s *OrganizationService) All() ([]model.Organization, error) { return s.repo.All() }
+
+// Create 新增组织（校验层级与编码）。
 func (s *OrganizationService) Create(item *model.Organization) error {
 	return s.validateAndSave(item, false)
 }
 
+// Update 更新组织。
 func (s *OrganizationService) Update(item *model.Organization) error {
 	if item.ID == 0 {
 		return errors.New("组织 ID 不能为空")
@@ -73,8 +80,10 @@ func (s *OrganizationService) validateAndSave(item *model.Organization, update b
 	return s.repo.Create(item)
 }
 
+// Delete 删除组织（存在下级或用户时拒绝）。
 func (s *OrganizationService) Delete(id uint64) error { return s.repo.Delete(id) }
 
+// Export 导出组织架构为 Excel。
 func (s *OrganizationService) Export() ([]byte, error) {
 	items, err := s.repo.All()
 	if err != nil {
@@ -123,6 +132,7 @@ func (s *OrganizationService) Export() ([]byte, error) {
 	return buffer.Bytes(), nil
 }
 
+// ImportOrganization 通讯录导入时的一行组织数据。
 type ImportOrganization struct {
 	Type       string
 	Name       string
@@ -134,6 +144,7 @@ type ImportOrganization struct {
 	Status     string
 }
 
+// Import 导入组织架构 Excel，按编码新增或更新。
 func (s *OrganizationService) Import(filename string, reader io.Reader) (int, error) {
 	ext := strings.ToLower(filepath.Ext(filename))
 	if ext != ".xlsx" && ext != ".xls" {

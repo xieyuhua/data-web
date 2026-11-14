@@ -15,6 +15,7 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
+// currentUser 获取当前登录用户（未登录返回 nil）。
 func currentUser(c *gin.Context) *model.User { return middleware.CurrentUser(c) }
 
 // filterParams 解析看板级全局筛选器参数（filters 为 JSON 对象）。
@@ -53,18 +54,20 @@ func filterParams(c *gin.Context) map[string]string {
 	return result
 }
 
+// AuditHandler 审计日志查询接口。
 type AuditHandler struct {
 	repo *repository.AuditRepository
 }
 
+// NewAuditHandler 创建审计日志处理器。
 func NewAuditHandler(repo *repository.AuditRepository) *AuditHandler {
 	return &AuditHandler{repo: repo}
 }
 
+// List 分页查询审计日志，同时返回概览统计与动作字典。
 func (h *AuditHandler) List(c *gin.Context) {
 	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
 	pageSize, _ := strconv.Atoi(c.DefaultQuery("page_size", "20"))
-	status, _ := strconv.Atoi(c.Query("status"))
 	if page < 1 {
 		page = 1
 	}
@@ -78,7 +81,7 @@ func (h *AuditHandler) List(c *gin.Context) {
 	items, total, err := h.repo.Search(repository.AuditFilter{
 		Keyword:  c.Query("keyword"),
 		Action:   c.Query("action"),
-		Status:   status,
+		Status:   c.Query("status"),
 		StartAt:  parseAuditTime(c.Query("start")),
 		EndAt:    parseAuditTime(c.Query("end"), 24*time.Hour),
 		Page:     page,

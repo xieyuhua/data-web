@@ -17,6 +17,7 @@ import (
 	"gorm.io/gorm"
 )
 
+// TargetMetric 目标指标字典项（销售额 / 毛利 / 订单数等）。
 type TargetMetric struct {
 	Key   string
 	Label string
@@ -32,6 +33,7 @@ var TargetMetrics = []TargetMetric{
 	{Key: "gross_margin", Label: "毛利率", Unit: "%", Expr: "CASE WHEN SUM(revenue) > 0 THEN SUM(gross_profit) / SUM(revenue) * 100 ELSE 0 END"},
 }
 
+// TargetInput 目标任务新建 / 更新入参。
 type TargetInput struct {
 	Name        string  `json:"name"`
 	OrgID       uint64  `json:"org_id"`
@@ -44,6 +46,7 @@ type TargetInput struct {
 	Remark      string  `json:"remark"`
 }
 
+// TargetView 目标任务对外视图。
 type TargetView struct {
 	model.Target
 	OrgName     string `json:"org_name"`
@@ -52,6 +55,7 @@ type TargetView struct {
 	TaskLabel   string `json:"task_type_label"`
 }
 
+// TargetAchievement 单条目标的达成情况。
 type TargetAchievement struct {
 	ID          uint64  `json:"id"`
 	Name        string  `json:"name"`
@@ -72,6 +76,7 @@ type TargetAchievement struct {
 	Status      string  `json:"status"`
 }
 
+// TargetSummary 目标达成汇总。
 type TargetSummary struct {
 	TargetValue float64 `json:"target_value"`
 	ActualValue float64 `json:"actual_value"`
@@ -80,6 +85,7 @@ type TargetSummary struct {
 	RootCount   int     `json:"root_count"`
 }
 
+// TargetAchievementResult 一次达成率查询的完整结果。
 type TargetAchievementResult struct {
 	PeriodType       string              `json:"period_type"`
 	Period           string              `json:"period"`
@@ -92,11 +98,13 @@ type TargetAchievementResult struct {
 	Targets          []TargetAchievement `json:"targets"`
 }
 
+// TargetService 目标任务业务服务。
 type TargetService struct {
 	repo    *repository.TargetRepository
 	orgRepo *repository.OrganizationRepository
 }
 
+// NewTargetService 创建目标任务服务。
 func NewTargetService(repo *repository.TargetRepository, orgRepo *repository.OrganizationRepository) *TargetService {
 	return &TargetService{repo: repo, orgRepo: orgRepo}
 }
@@ -107,6 +115,7 @@ const (
 	TaskTypeChallenge = "challenge"
 )
 
+// NormalizeTaskType 统一任务类型：base（基础任务）/ challenge（挑战任务）。
 func NormalizeTaskType(value string) string {
 	switch strings.ToLower(strings.TrimSpace(value)) {
 	case TaskTypeChallenge, "挑战", "挑战任务":
@@ -116,6 +125,7 @@ func NormalizeTaskType(value string) string {
 	}
 }
 
+// TaskTypeLabel 返回任务类型中文名称。
 func TaskTypeLabel(value string) string {
 	if NormalizeTaskType(value) == TaskTypeChallenge {
 		return "挑战任务"
@@ -123,6 +133,7 @@ func TaskTypeLabel(value string) string {
 	return "基础任务"
 }
 
+// List 查询目标任务列表。
 func (s *TargetService) List(periodType, period, metric, taskType string, orgIDs []uint64) ([]TargetView, error) {
 	items, err := s.repo.List(periodType, period, metric, taskType, orgIDs)
 	if err != nil {
@@ -145,6 +156,7 @@ func (s *TargetService) List(periodType, period, metric, taskType string, orgIDs
 	return result, nil
 }
 
+// Create 新增目标任务（同组织+周期+指标+类型唯一）。
 func (s *TargetService) Create(input TargetInput, userID uint64) (*TargetView, error) {
 	item, err := s.fromInput(input, 0)
 	if err != nil {
@@ -157,6 +169,7 @@ func (s *TargetService) Create(input TargetInput, userID uint64) (*TargetView, e
 	return s.view(item)
 }
 
+// Update 更新目标任务。
 func (s *TargetService) Update(id uint64, input TargetInput) (*TargetView, error) {
 	existing, err := s.repo.FindByID(id)
 	if err != nil {
@@ -174,8 +187,10 @@ func (s *TargetService) Update(id uint64, input TargetInput) (*TargetView, error
 	return s.view(item)
 }
 
+// Delete 删除目标任务。
 func (s *TargetService) Delete(id uint64) error { return s.repo.Delete(id) }
 
+// Periods 查询已有周期列表。
 func (s *TargetService) Periods(periodType string) ([]string, error) {
 	return s.repo.DistinctPeriods(periodType)
 }
@@ -374,6 +389,7 @@ func (s *TargetService) actualValue(orgIDs []uint64, metric string, start, end t
 	return row.Actual, err
 }
 
+// Export 导出目标任务 Excel。
 func (s *TargetService) Export(orgIDs []uint64) ([]byte, error) {
 	items, err := s.repo.List("", "", "", "", orgIDs)
 	if err != nil {
@@ -413,6 +429,7 @@ func (s *TargetService) Export(orgIDs []uint64) ([]byte, error) {
 	return buffer.Bytes(), nil
 }
 
+// Template 生成任务导入模板。
 func (s *TargetService) Template() ([]byte, error) {
 	file := excelize.NewFile()
 	defer file.Close()
@@ -567,6 +584,7 @@ func metricLabel(key string) string {
 	return key
 }
 
+// CurrentPeriod 按周期类型返回当前周期字符串（月 / 季 / 年）。
 func CurrentPeriod(periodType string) string {
 	now := time.Now()
 	switch periodType {

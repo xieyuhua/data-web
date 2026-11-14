@@ -1,3 +1,4 @@
+<!-- 数据源管理页：配置 MySQL / PostgreSQL / Oracle / SQL Server / SQLite 连接，支持测试连接与启用停用。 -->
 <script setup>
 import { computed, onMounted, reactive, ref } from 'vue'
 import {
@@ -69,10 +70,12 @@ const activeCount = computed(() => items.value.filter((item) => item.status === 
 const testedCount = computed(() => items.value.filter((item) => item.last_test_ok).length)
 const dsnExample = computed(() => DSN_EXAMPLES[form.driver] || '')
 
+// 数据库驱动的展示名称与图标信息
 function driverMeta(driver) {
   return DRIVERS.find((item) => item.value === driver) || { label: driver || '—', className: '' }
 }
 
+// 重置数据源表单
 function resetForm() {
   editingId.value = null
   Object.assign(form, {
@@ -88,11 +91,13 @@ function resetForm() {
   })
 }
 
+// 打开新建数据源弹窗
 function openCreate() {
   resetForm()
   dialogVisible.value = true
 }
 
+// 打开编辑数据源弹窗
 function openEdit(row) {
   resetForm()
   editingId.value = row.id
@@ -110,6 +115,7 @@ function openEdit(row) {
   dialogVisible.value = true
 }
 
+// 加载数据源列表
 async function load() {
   loading.value = true
   try {
@@ -121,6 +127,7 @@ async function load() {
   }
 }
 
+// 保存数据源配置（密码加密存储）
 async function save() {
   if (!form.name.trim() || !form.code.trim()) {
     ElMessage.warning('请填写数据源名称和编码')
@@ -159,6 +166,7 @@ async function save() {
   }
 }
 
+// 测试已保存数据源的连接
 async function testConnection(row) {
   testState[row.id] = { loading: true }
   try {
@@ -173,6 +181,7 @@ async function testConnection(row) {
   }
 }
 
+// 测试表单中尚未保存的连接参数
 async function testForm() {
   if (!form.driver) {
     ElMessage.warning('请选择驱动')
@@ -200,6 +209,7 @@ async function testForm() {
   }
 }
 
+// 删除数据源
 async function remove(row) {
   try {
     await ElMessageBox.confirm(`确认删除数据源「${row.name}」？引用该数据源的数据集将无法查询。`, '删除数据源', {

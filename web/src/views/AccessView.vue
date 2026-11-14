@@ -1,8 +1,10 @@
+<!-- 数据权限说明页：展示当前账号的组织归属、角色、数据范围与可见组织边界，并提供企业微信绑定入口。 -->
 <script setup>
 import { computed, onMounted, ref } from 'vue'
 import { Database, KeyRound, ShieldCheck, Store, Users } from 'lucide-vue-next'
 import { ElMessage } from 'element-plus'
 import { api, getErrorMessage } from '../api/client'
+import WecomBindingCard from '../components/WecomBindingCard.vue'
 import { useAuthStore } from '../stores/auth'
 import { dataScopeLabel, findOrgChain, flattenOrgs, orgTypeLabel } from '../utils/org'
 
@@ -30,6 +32,7 @@ const permissionList = computed(() => {
   return auth.permissions.map((item) => permissionLabels[item] || item)
 })
 
+// 加载当前账号的数据权限详情（角色、数据范围、可见组织列表）
 async function load() {
   loading.value = true
   try {
@@ -147,6 +150,8 @@ onMounted(load)
       </div>
 
       <aside class="admin-aside">
+        <!-- 当前账号的企业微信绑定状态与绑定/解绑入口 -->
+        <WecomBindingCard />
         <div class="scope-card">
           <h3><KeyRound :size="13" style="vertical-align: -2px" /> 权限项</h3>
           <p>角色权限决定可执行的操作，数据范围决定可见的组织数据。</p>

@@ -10,14 +10,17 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
+// DrillHandler 组织下钻查询接口。
 type DrillHandler struct {
 	service *service.DrillService
 }
 
+// NewDrillHandler 创建下钻处理器。
 func NewDrillHandler(service *service.DrillService) *DrillHandler {
 	return &DrillHandler{service: service}
 }
 
+// Query 按组织节点下钻查询汇总数据；数据范围由服务层按角色计算。
 func (h *DrillHandler) Query(c *gin.Context) {
 	orgID, _ := strconv.ParseUint(c.Query("org_id"), 10, 64)
 	result, err := h.service.Query(

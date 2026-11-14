@@ -1,3 +1,8 @@
+<!-- 组织下钻分析组件（看板核心交互）：
+     - 逐级下钻：以当前登录人权限范围内的一级组织为起点，点击行下钻到下一级（大区 → 区域 → 门店 → 员工）
+     - 全部门店：跨层级平铺当前范围内的所有门店
+     - 全部员工：合并展示当前范围内所有门店的员工销售
+     - 点击组织名进入该组织，点击指标名查看最近一段时间的趋势图 -->
 <script setup>
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import {
@@ -14,7 +19,7 @@ import {
   TrendingUp,
   Users,
 } from 'lucide-vue-next'
-import * as echarts from 'echarts'
+import echarts from '../utils/echarts'
 import { ElMessage } from 'element-plus'
 import { api, getErrorMessage } from '../api/client'
 import { compactNumber, dateRange, formatValue, toNumber } from '../utils/format'
@@ -29,7 +34,9 @@ const props = defineProps({
 })
 
 const loading = ref(true)
+// 当前层级下钻结果：{ current, nodes: [...], next_level_type }
 const result = ref(null)
+// 可展示的指标列表，默认五项，可被后台目标指标配置覆盖
 const metrics = ref([
   { key: 'revenue', label: '销售额', unit: '元' },
   { key: 'orders', label: '订单量', unit: '笔' },
@@ -37,10 +44,13 @@ const metrics = ref([
   { key: 'customers', label: '客流', unit: '人' },
   { key: 'gross_margin', label: '毛利率', unit: '%' },
 ])
+// 当前周期类型：月 / 季 / 年
 const periodType = ref('month')
 const period = ref(currentPeriod('month'))
 const metric = ref('revenue')
+// 展示模式：level 逐级下钻 / all 全部门店 / employees 全部员工
 const mode = ref(['level', 'all', 'employees'].includes(props.initialMode) ? props.initialMode : 'level')
+// 当前所在组织 ID，0 表示当前权限范围内的默认起点
 const currentOrgID = ref(0)
 const chartEl = ref(null)
 let chart = null
@@ -98,6 +108,7 @@ const periodOptions = computed(() => {
 })
 
 const metricInfo = computed(() => metrics.value.find((item) => item.key === metric.value) || metrics.value[0])
+// 指标格式化：毛利率按百分比，订单/客流按整数，其余按金额
 const metricFormat = computed(() => {
   const key = metricInfo.value?.key
   if (key === 'gross_margin') return 'percent'
@@ -105,7 +116,9 @@ const metricFormat = computed(() => {
   return 'currency'
 })
 const maxActual = computed(() => Math.max(1, ...(result.value?.nodes || []).map((node) => Math.abs(toNumber(node.actual_value)))))
+// 当前组织类型中文名（如“大区”）
 const currentTypeLabel = computed(() => orgTypeLabel(result.value?.current?.type))
+// 下级节点类型中文名（节点类型不一致时显示“下级”）
 const nodeTypeLabel = computed(() => {
   const nodes = result.value?.nodes || []
   const types = Array.from(new Set(nodes.map((node) => node.type).filter(Boolean)))
@@ -114,8 +127,10 @@ const nodeTypeLabel = computed(() => {
   if (mode.value === 'employees') return '员工'
   return orgTypeLabel(result.value?.next_level_type)
 })
+// 当前视图内是否存在目标值（决定是否展示达成率列）
 const hasTargetInView = computed(() => (result.value?.nodes || []).some((node) => node.has_target))
 
+// 计算默认周期值，如 2026-11 / 2026-Q4 / 2026
 function currentPeriod(type) {
   const now = new Date()
   if (type === 'quarter') return `${now.getFullYear()}-Q${Math.floor(now.getMonth() / 3) + 1}`
@@ -130,11 +145,13 @@ function formatMetric(value, format = 'number') {
   return formatValue(value, format === 'percent' ? 'number' : 'currency', info?.unit || '')
 }
 
+// 达成率文案，无目标时显示占位符
 function rateText(node) {
   if (!node?.has_target || node.rate === null || node.rate === undefined) return '—'
   return `${toNumber(node.rate).toFixed(1)}%`
 }
 
+// 达成率样式：>=100% 领先、>=80% 正常、其余落后
 function rateTone(node) {
   if (!node?.has_target) return 'muted'
   if (node.rate >= 100) return 'ahead'
@@ -142,6 +159,7 @@ function rateTone(node) {
   return 'behind'
 }
 
+// 渲染当前层级对比条形图（实际值 vs 目标值）
 function renderChart() {
   const nodes = (result.value?.nodes || []).slice(0, 8)
   if (!chartEl.value || !nodes.length) {
@@ -272,6 +290,7 @@ const trendFormat = computed(() => {
   return 'currency'
 })
 
+// 打开趋势图弹窗，默认展示最近 7 天
 function openTrend(row, metricKey) {
   if (!row) return
   trendNode.value = row
@@ -283,6 +302,7 @@ function openTrend(row, metricKey) {
   loadTrend()
 }
 
+// 按当前组织节点 + 指标 + 时间区间加载趋势数据
 async function loadTrend() {
   const node = trendNode.value
   if (!node || !trendRange.value?.[0]) return
@@ -305,18 +325,21 @@ async function loadTrend() {
   }
 }
 
+// 快捷时间范围：最近 N 天
 function chooseTrendDays(days) {
   trendDays.value = days
   trendRange.value = dateRange(days)
   loadTrend()
 }
 
+// 自定义时间范围（日期选择器）
 function chooseTrendRange(value) {
   if (!value || !value[0]) return
   trendDays.value = 0
   loadTrend()
 }
 
+// 趋势图坐标轴 / tooltip 的数值格式化
 function trendLabel(value) {
   const isPercent = trend.value?.metric === 'gross_margin'
   const key = trend.value?.metric
@@ -395,6 +418,7 @@ function onTrendOpened() {
   renderTrendChart()
 }
 
+// 加载当前层级的下钻数据
 async function load() {
   loading.value = true
   try {
@@ -415,20 +439,24 @@ async function load() {
   renderChart()
 }
 
+// 切换周期类型（月/季/年）并重置到当前周期
 function changePeriodType(value) {
   period.value = currentPeriod(value)
 }
 
+// 切换展示模式（逐级下钻 / 全部门店 / 全部员工）
 function switchMode(value) {
   mode.value = value
   load()
 }
 
+// 跳转到指定组织（面包屑点击）
 function gotoOrg(id) {
   currentOrgID.value = Number(id) || 0
   load()
 }
 
+// 点击行下钻到该组织；员工节点不可再下钻
 function drill(node) {
   if (!node?.drillable) return
   if (node.type === 'employee') return
@@ -437,6 +465,7 @@ function drill(node) {
   load()
 }
 
+// 回到权限范围内的默认起点
 function resetToScope() {
   currentOrgID.value = 0
   mode.value = 'level'
@@ -446,6 +475,7 @@ function resetToScope() {
 watch([metric, period], () => load())
 watch(() => props.apiBase, () => { currentOrgID.value = 0; load() })
 
+// 组件尺寸变化时同步重置两张图表的尺寸
 function handleResize() {
   chart?.resize()
   trendChart?.resize()

@@ -18,6 +18,7 @@ type Box struct {
 	aead cipher.AEAD
 }
 
+// New 由密钥派生 32 字节 AES 密钥并初始化 GCM。
 func New(key string) (*Box, error) {
 	sum := sha256.Sum256([]byte("bi-platform/secretbox/" + key))
 	block, err := aes.NewCipher(sum[:])
@@ -31,6 +32,7 @@ func New(key string) (*Box, error) {
 	return &Box{aead: aead}, nil
 }
 
+// Encrypt 加密明文；空值与已加密值原样返回，保证幂等。
 func (b *Box) Encrypt(plain string) (string, error) {
 	if plain == "" || strings.HasPrefix(plain, prefix) {
 		return plain, nil
@@ -43,6 +45,7 @@ func (b *Box) Encrypt(plain string) (string, error) {
 	return prefix + base64.RawURLEncoding.EncodeToString(sealed), nil
 }
 
+// Decrypt 解密密文；非加密前缀的值按历史明文兼容处理。
 func (b *Box) Decrypt(value string) (string, error) {
 	if value == "" {
 		return "", nil

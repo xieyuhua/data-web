@@ -1,3 +1,7 @@
+// 路由配置与全局访问守卫：
+// - public: true 的页面（登录、企业微信回调、分享看板）无需登录
+// - 其余页面需先换取用户信息，加载失败跳登录页
+// - meta.admin 仅超级管理员可访问；meta.permission 按权限码校验
 import { createRouter, createWebHistory } from 'vue-router'
 import { useAuthStore } from '../stores/auth'
 
@@ -7,6 +11,13 @@ const routes = [
     name: 'login',
     component: () => import('../views/LoginView.vue'),
     meta: { title: '登录', public: true },
+  },
+  {
+    // 企业微信授权回调页：公开访问，用 ticket 换取登录态
+    path: '/wecom/callback',
+    name: 'wecom-callback',
+    component: () => import('../views/WecomCallbackView.vue'),
+    meta: { title: '企业微信登录', public: true },
   },
   {
     path: '/share/:token',
@@ -103,6 +114,12 @@ const routes = [
         component: () => import('../views/admin/PushCenterView.vue'),
         meta: { title: '推送中心', subtitle: '企业微信与微信公众号定时触达', admin: true },
       },
+      {
+        path: 'admin/audit',
+        name: 'admin-audit',
+        component: () => import('../views/admin/AuditLogView.vue'),
+        meta: { title: '审计日志', subtitle: '登录、变更、导出与分享访问留痕', admin: true },
+      },
     ],
   },
   { path: '/:pathMatch(.*)*', redirect: '/dashboards' },
@@ -114,6 +131,7 @@ const router = createRouter({
   scrollBehavior: () => ({ top: 0 }),
 })
 
+// 全局前置守卫：设置页面标题、校验登录态与权限
 router.beforeEach(async (to) => {
   document.title = `${to.meta.title || '经营分析'} · 青衡 BI`
   if (to.meta.public) return true

@@ -1,3 +1,4 @@
+<!-- 推送中心：配置定时推送任务与推送模板（企业微信 / 微信），自定义卡片样式，查看发送记录并支持重试。 -->
 <script setup>
 import { computed, onMounted, reactive, ref, watch } from 'vue'
 import {
@@ -55,6 +56,7 @@ const cronPresets = [
   { label: '每月 1 日 09:00', value: '0 9 1 * *' },
 ]
 
+// 安全解析 JSON 字符串
 function safeParse(value) {
   if (!value) return {}
   if (typeof value === 'object') return value
@@ -76,10 +78,12 @@ const sampleValues = {
   URL: 'https://example.com/share/preview',
 }
 
+// 把后端错误信息转换为更友好的提示
 function friendly(text) {
   return String(text || '').replace(/\{\{\s*\.?([A-Za-z0-9_]+)\s*\}\}/g, (_, key) => sampleValues[key] ?? '')
 }
 
+// 解析推送模板的卡片样式配置
 function styleOf(template) {
   const style = safeParse(template?.style_json)
   return {
@@ -89,14 +93,17 @@ function styleOf(template) {
   }
 }
 
+// 推送渠道码转中文
 function channelLabel(channel) {
   return channelLabels[channel] || channel
 }
 
+// 模板渠道码转中文
 function templateChannelLabel(channel) {
   return templateChannelLabels[channel] || channel
 }
 
+// 收件人展示文案（按角色 / 组织 / 用户）
 function recipientText(subscription) {
   const rule = subscription?.recipients || {}
   const parts = []
@@ -112,14 +119,17 @@ function recipientText(subscription) {
   return parts.length ? parts.join('、') : '全部启用用户'
 }
 
+// 加载推送任务列表
 async function loadTasks() {
   subscriptions.value = (await api.get('/admin/push/subscriptions')) || []
 }
 
+// 加载推送模板列表
 async function loadTemplates() {
   templates.value = (await api.get('/admin/push/templates')) || []
 }
 
+// 加载发送记录
 async function loadRecords() {
   records.value = (await api.get('/admin/push/records?limit=100')) || []
 }
@@ -141,6 +151,7 @@ const wechat = reactive({
   dry_run: true,
 })
 
+// 应用渠道配置到本地状态
 function applyChannels(items) {
   for (const item of items || []) {
     const config = safeParse(item.config)
@@ -162,11 +173,13 @@ function applyChannels(items) {
   }
 }
 
+// 加载企业微信 / 微信公众号渠道配置
 async function loadChannels() {
   const items = (await api.get('/admin/push/channels')) || []
   applyChannels(items)
 }
 
+// 一次性加载推送中心全部数据
 async function loadAll() {
   loading.value = true
   try {
@@ -210,6 +223,7 @@ const taskForm = reactive({
   enabled: true,
 })
 
+// 重置推送任务表单
 function resetTaskForm() {
   editingTaskId.value = null
   Object.assign(taskForm, {
@@ -226,11 +240,13 @@ function resetTaskForm() {
   })
 }
 
+// 打开新建推送任务弹窗
 function openTaskCreate() {
   resetTaskForm()
   taskVisible.value = true
 }
 
+// 打开编辑推送任务弹窗
 function openTaskEdit(row) {
   resetTaskForm()
   editingTaskId.value = row.id
@@ -250,6 +266,7 @@ function openTaskEdit(row) {
   taskVisible.value = true
 }
 
+// 保存推送任务（含定时规则）
 async function saveTask() {
   if (!taskForm.name.trim()) {
     ElMessage.warning('请填写任务名称')
@@ -299,6 +316,7 @@ async function saveTask() {
   }
 }
 
+// 删除推送任务
 async function removeTask(row) {
   try {
     await ElMessageBox.confirm(`确认删除推送任务「${row.name}」？`, '删除任务', {
@@ -314,6 +332,7 @@ async function removeTask(row) {
   }
 }
 
+// 立即执行一次推送
 async function sendNow(row) {
   try {
     await ElMessageBox.confirm(
@@ -327,6 +346,27 @@ async function sendNow(row) {
         `跳过 ${result?.skipped || 0}，失败 ${result?.failed || 0}。`,
       '推送结果',
       { type: result?.failed ? 'warning' : 'success', confirmButtonText: '知道了' },
+    )
+    await Promise.all([loadTasks(), loadRecords()])
+  } catch (error) {
+    if (error !== 'cancel') ElMessage.error(getErrorMessage(error))
+  }
+}
+
+// 重试失败的推送记录
+async function retryRecord(row) {
+  if (!row.subscription_id) {
+    ElMessage.warning('该记录未关联定时任务，无法重试')
+    return
+  }
+  try {
+    await ElMessageBox.confirm('将重新执行该记录所属的推送任务，并生成新的推送记录。', '重试推送', {
+      confirmButtonText: '重试',
+      cancelButtonText: '取消',
+    })
+    const result = await api.post(`/admin/push/records/${row.id}/retry`)
+    ElMessage.success(
+      `重试完成：成功 ${result?.sent || 0}，模拟 ${result?.simulated || 0}，失败 ${result?.failed || 0}`,
     )
     await Promise.all([loadTasks(), loadRecords()])
   } catch (error) {
@@ -351,6 +391,7 @@ const templateForm = reactive({
   enabled: true,
 })
 
+// 重置模板表单
 function resetTemplateForm() {
   editingTemplateId.value = null
   Object.assign(templateForm, {
@@ -366,11 +407,13 @@ function resetTemplateForm() {
   })
 }
 
+// 打开新建推送模板弹窗
 function openTemplateCreate() {
   resetTemplateForm()
   templateVisible.value = true
 }
 
+// 打开编辑推送模板弹窗
 function openTemplateEdit(row) {
   resetTemplateForm()
   const style = styleOf(row)
@@ -388,6 +431,7 @@ function openTemplateEdit(row) {
   templateVisible.value = true
 }
 
+// 保存推送模板（卡片样式可自定义）
 async function saveTemplate() {
   if (!templateForm.name.trim() || !templateForm.title_template.trim() || !templateForm.content_template.trim()) {
     ElMessage.warning('请填写模板名称、标题和正文')
@@ -423,6 +467,7 @@ async function saveTemplate() {
   }
 }
 
+// 删除推送模板
 async function removeTemplate(row) {
   try {
     await ElMessageBox.confirm(`确认删除推送模板「${row.name}」？`, '删除模板', {
@@ -446,6 +491,7 @@ const previewTemplateId = ref(null)
 const previewDashboardId = ref(null)
 const previewResult = ref(null)
 
+// 打开推送内容预览
 function openPreview(row) {
   previewTemplateId.value = row.id
   previewDashboardId.value = dashboards.value[0]?.id || null
@@ -454,6 +500,7 @@ function openPreview(row) {
   loadPreview()
 }
 
+// 加载推送预览数据
 async function loadPreview() {
   if (!previewTemplateId.value || !previewDashboardId.value) return
   previewLoading.value = true
@@ -483,6 +530,7 @@ const previewStyle = computed(() => {
 
 const channelSaving = ref('')
 
+// 保存渠道配置（Secret 加密存储）
 async function saveChannel(key) {
   channelSaving.value = key
   try {
@@ -574,6 +622,12 @@ onMounted(loadAll)
                   <span class="tag" :class="statusMeta(item.last_status).className">
                     {{ statusMeta(item.last_status).label }}
                   </span>
+                </strong>
+              </div>
+              <div class="schedule-detail">
+                <span>下次执行</span>
+                <strong style="font-size: 9px">
+                  {{ item.enabled && item.next_run_at ? formatDate(item.next_run_at, true) : item.enabled ? '待调度' : '已停用' }}
                 </strong>
               </div>
             </div>
@@ -823,6 +877,19 @@ onMounted(loadAll)
             <el-table-column label="错误信息" min-width="170" show-overflow-tooltip>
               <template #default="{ row }">
                 <span style="color: var(--rose); font-size: 9px">{{ row.error || '—' }}</span>
+              </template>
+            </el-table-column>
+            <el-table-column label="操作" width="90" fixed="right">
+              <template #default="{ row }">
+                <button
+                  class="btn btn-ghost btn-sm"
+                  type="button"
+                  :disabled="row.status !== 'failed' || !row.subscription_id"
+                  :title="row.subscription_id ? '重新执行该任务' : '记录未关联任务'"
+                  @click="retryRecord(row)"
+                >
+                  <RefreshCw :size="13" /> 重试
+                </button>
               </template>
             </el-table-column>
           </el-table>

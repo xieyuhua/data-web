@@ -19,6 +19,8 @@ import (
 
 var filterKeyPattern = regexp.MustCompile(`^[a-zA-Z0-9_]{1,32}$`)
 
+// DashboardWidget 看板上的单个组件（图表 / 表格 / 指标卡）。
+// X/Y/W/H 为 12 栅格布局坐标，Config 保存指标映射、单位等可视化配置。
 type DashboardWidget struct {
 	ID        string         `json:"id"`
 	Title     string         `json:"title"`
@@ -32,6 +34,7 @@ type DashboardWidget struct {
 	Config    map[string]any `json:"config"`
 }
 
+// DashboardLayout 看板布局：全局设置 + 组件列表。
 type DashboardLayout struct {
 	Settings map[string]any    `json:"settings"`
 	Widgets  []DashboardWidget `json:"widgets"`
@@ -49,6 +52,7 @@ type DashboardFilter struct {
 	HideOnShare bool     `json:"hide_on_share"`
 }
 
+// DashboardView 看板对外视图结构。
 type DashboardView struct {
 	ID             uint64          `json:"id"`
 	Name           string          `json:"name"`
@@ -71,6 +75,7 @@ type DashboardView struct {
 	UpdatedAt      time.Time       `json:"updated_at"`
 }
 
+// DashboardInput 新建 / 更新看板的入参。
 type DashboardInput struct {
 	Name           string          `json:"name"`
 	Code           string          `json:"code"`
@@ -88,6 +93,7 @@ type DashboardInput struct {
 	DrillMode      string          `json:"drill_mode"`
 }
 
+// DatasetDashboardInput 由数据集一键生成看板的入参。
 type DatasetDashboardInput struct {
 	Name        string           `json:"name"`
 	Code        string           `json:"code"`
@@ -106,6 +112,7 @@ type DatasetDashboardInput struct {
 	Metrics     []map[string]any `json:"metrics"`
 }
 
+// WidgetQueryResult 单个组件的查询结果；单个组件失败只影响自身。
 type WidgetQueryResult struct {
 	WidgetID  string         `json:"widget_id"`
 	Title     string         `json:"title"`
@@ -115,22 +122,26 @@ type WidgetQueryResult struct {
 	Error     string         `json:"error,omitempty"`
 }
 
+// DashboardData 整块看板的查询结果。
 type DashboardData struct {
 	StartDate string              `json:"start_date"`
 	EndDate   string              `json:"end_date"`
 	Widgets   []WidgetQueryResult `json:"widgets"`
 }
 
+// DashboardService 看板业务服务。
 type DashboardService struct {
 	repo        *repository.DashboardRepository
 	datasetRepo *repository.DatasetRepository
 	dataset     *DatasetService
 }
 
+// NewDashboardService 创建看板服务。
 func NewDashboardService(repo *repository.DashboardRepository, datasetRepo *repository.DatasetRepository, dataset *DatasetService) *DashboardService {
 	return &DashboardService{repo: repo, datasetRepo: datasetRepo, dataset: dataset}
 }
 
+// List 查询看板列表。
 func (s *DashboardService) List(keyword, category string) ([]DashboardView, error) {
 	items, err := s.repo.List(keyword, category)
 	if err != nil {
@@ -143,6 +154,7 @@ func (s *DashboardService) List(keyword, category string) ([]DashboardView, erro
 	return result, nil
 }
 
+// Get 查询看板详情。
 func (s *DashboardService) Get(id uint64) (*DashboardView, error) {
 	item, err := s.repo.FindByID(id)
 	if err != nil {
@@ -152,6 +164,7 @@ func (s *DashboardService) Get(id uint64) (*DashboardView, error) {
 	return &view, nil
 }
 
+// Create 新建看板。
 func (s *DashboardService) Create(input DashboardInput, userID uint64) (*DashboardView, error) {
 	item, err := s.fromInput(input)
 	if err != nil {
@@ -168,6 +181,7 @@ func (s *DashboardService) Create(input DashboardInput, userID uint64) (*Dashboa
 	return s.Get(item.ID)
 }
 
+// Update 更新看板。
 func (s *DashboardService) Update(id uint64, input DashboardInput) (*DashboardView, error) {
 	existing, err := s.repo.FindByID(id)
 	if err != nil {
@@ -192,8 +206,10 @@ func (s *DashboardService) Update(id uint64, input DashboardInput) (*DashboardVi
 	return s.Get(id)
 }
 
+// Delete 删除看板。
 func (s *DashboardService) Delete(id uint64) error { return s.repo.Delete(id) }
 
+// Duplicate 复制看板（生成新的编码并归属指定用户）。
 func (s *DashboardService) Duplicate(id uint64, userID uint64) (*DashboardView, error) {
 	source, err := s.repo.FindByID(id)
 	if err != nil {
@@ -524,6 +540,7 @@ func normalizeWidgetFilterLinks(widgets []DashboardWidget, filters []DashboardFi
 	}
 }
 
+// Query 并发执行看板内全部组件的查询，并注入组织数据权限与全局筛选。
 func (s *DashboardService) Query(ctx context.Context, dashboardID uint64, startDate, endDate string, orgIDs []uint64, options QueryOptions) (*DashboardData, error) {
 	dashboard, err := s.repo.FindByID(dashboardID)
 	if err != nil {
@@ -714,6 +731,7 @@ func normalizeDateRange(startDate, endDate string) (string, string) {
 	return startDate, endDate
 }
 
+// TemplateView 模板对外视图。
 type TemplateView struct {
 	ID          uint64          `json:"id"`
 	Name        string          `json:"name"`
@@ -727,15 +745,18 @@ type TemplateView struct {
 	UpdatedAt   time.Time       `json:"updated_at"`
 }
 
+// TemplateService 看板模板服务。
 type TemplateService struct {
 	repo      *repository.TemplateRepository
 	dashboard *repository.DashboardRepository
 }
 
+// NewTemplateService 创建模板服务。
 func NewTemplateService(repo *repository.TemplateRepository, dashboard *repository.DashboardRepository) *TemplateService {
 	return &TemplateService{repo: repo, dashboard: dashboard}
 }
 
+// List 查询模板列表。
 func (s *TemplateService) List() ([]TemplateView, error) {
 	items, err := s.repo.List()
 	if err != nil {
@@ -748,6 +769,7 @@ func (s *TemplateService) List() ([]TemplateView, error) {
 	return result, nil
 }
 
+// Create 将布局保存为模板。
 func (s *TemplateService) Create(name, description, category, theme, cover string, layout json.RawMessage, userID uint64) (*TemplateView, error) {
 	if name == "" || len(layout) == 0 {
 		return nil, errors.New("模板名称和布局不能为空")
@@ -764,6 +786,7 @@ func (s *TemplateService) Create(name, description, category, theme, cover strin
 	return &view, nil
 }
 
+// CreateDashboard 基于模板创建看板。
 func (s *TemplateService) CreateDashboard(templateID, userID uint64) (*DashboardView, error) {
 	template, err := s.repo.FindByID(templateID)
 	if err != nil {
@@ -786,6 +809,7 @@ func (s *TemplateService) CreateDashboard(templateID, userID uint64) (*Dashboard
 	}, nil
 }
 
+// Delete 删除模板（内置模板不可删除）。
 func (s *TemplateService) Delete(id uint64) error {
 	item, err := s.repo.FindByID(id)
 	if err != nil {

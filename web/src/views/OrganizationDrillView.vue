@@ -1,3 +1,4 @@
+<!-- 组织下钻页面：复用 OrgDrillExplorer 组件，按当前登录人权限展示可逐级下钻的组织经营数据。 -->
 <script setup>
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import {
@@ -13,7 +14,7 @@ import {
   Target,
   Users,
 } from 'lucide-vue-next'
-import * as echarts from 'echarts'
+import echarts from '../utils/echarts'
 import { ElMessage } from 'element-plus'
 import { api, getErrorMessage } from '../api/client'
 import { compactNumber, formatValue, toNumber } from '../utils/format'
@@ -98,6 +99,7 @@ const nodeTypeLabel = computed(() => {
 })
 const hasTargetInView = computed(() => (result.value?.nodes || []).some((node) => node.has_target))
 
+// 计算默认周期值，如 2026-11 / 2026-Q4 / 2026
 function currentPeriod(type) {
   const now = new Date()
   if (type === 'quarter') return `${now.getFullYear()}-Q${Math.floor(now.getMonth() / 3) + 1}`
@@ -105,6 +107,7 @@ function currentPeriod(type) {
   return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`
 }
 
+// 按指标类型格式化数值（金额 / 整数 / 百分比）
 function formatMetric(value, format = 'number') {
   const info = metricInfo.value
   if (info?.key === 'gross_margin') return `${toNumber(value).toFixed(1)}%`
@@ -112,11 +115,13 @@ function formatMetric(value, format = 'number') {
   return formatValue(value, format === 'percent' ? 'number' : 'currency', info?.unit || '')
 }
 
+// 达成率文案，无目标时显示占位符
 function rateText(node) {
   if (!node?.has_target || node.rate === null || node.rate === undefined) return '—'
   return `${toNumber(node.rate).toFixed(1)}%`
 }
 
+// 达成率样式：>=100% 领先、>=80% 正常、其余落后
 function rateTone(node) {
   if (!node?.has_target) return 'muted'
   if (node.rate >= 100) return 'ahead'
@@ -124,6 +129,7 @@ function rateTone(node) {
   return 'behind'
 }
 
+// 渲染当前层级的实际值 / 目标值对比条形图
 function renderChart() {
   const nodes = (result.value?.nodes || []).slice(0, 8)
   if (!chartEl.value || !nodes.length) {
@@ -199,16 +205,19 @@ function renderChart() {
   chart.resize()
 }
 
+// 节点展示名称：组织名或员工名
 function nodeLabel(node) {
   if (node?.type === 'employee' && node.parent_name) return `${node.name}·${node.parent_name}`
   return node?.name || ''
 }
 
+// CSV 单元格转义，防止 Excel 公式注入
 function csvCell(value) {
   const text = String(value ?? '')
   return /[",\r\n]/.test(text) ? `"${text.replace(/"/g, '""')}"` : text
 }
 
+// 导出当前层级数据为 CSV
 function exportCsv() {
   const rows = result.value?.nodes || []
   if (!rows.length) {
@@ -238,6 +247,7 @@ function exportCsv() {
   URL.revokeObjectURL(url)
 }
 
+// 加载后台配置的可用指标列表
 async function loadMetrics() {
   try {
     const list = await api.get('/targets/metrics')
@@ -247,6 +257,7 @@ async function loadMetrics() {
   }
 }
 
+// 加载当前组织层级的经营数据
 async function load() {
   loading.value = true
   try {
@@ -267,20 +278,24 @@ async function load() {
   renderChart()
 }
 
+// 切换周期类型（月 / 季 / 年）并重置到当前周期
 function changePeriodType(value) {
   period.value = currentPeriod(value)
 }
 
+// 切换展示模式（逐级下钻 / 全部门店 / 全部员工）
 function switchMode(value) {
   mode.value = value
   load()
 }
 
+// 跳转到指定组织（面包屑点击）
 function gotoOrg(id) {
   currentOrgID.value = Number(id) || 0
   load()
 }
 
+// 下钻到下一级组织
 function drill(node) {
   if (!node?.drillable) return
   if (node.type === 'employee') return
@@ -289,6 +304,7 @@ function drill(node) {
   load()
 }
 
+// 回到当前权限范围内的默认起点
 function resetToScope() {
   currentOrgID.value = 0
   mode.value = 'level'
@@ -297,6 +313,7 @@ function resetToScope() {
 
 watch([metric, period], () => load())
 
+// 窗口尺寸变化时重置图表尺寸，保证自适应
 function handleResize() {
   chart?.resize()
 }

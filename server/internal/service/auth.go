@@ -12,12 +12,14 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
+// AuthService 登录认证服务。
 type AuthService struct {
 	userRepo *repository.UserRepository
 	roleRepo *repository.RoleRepository
 	jwt      *auth.Manager
 }
 
+// LoginResult 登录成功后返回给前端的完整信息。
 type LoginResult struct {
 	Token       string     `json:"token"`
 	ExpiresAt   time.Time  `json:"expires_at"`
@@ -27,10 +29,12 @@ type LoginResult struct {
 	DataScope   string     `json:"data_scope"`
 }
 
+// NewAuthService 创建认证服务。
 func NewAuthService(userRepo *repository.UserRepository, roleRepo *repository.RoleRepository, jwt *auth.Manager) *AuthService {
 	return &AuthService{userRepo: userRepo, roleRepo: roleRepo, jwt: jwt}
 }
 
+// Login 账号密码登录：校验 bcrypt 密码哈希并签发 JWT。
 func (s *AuthService) Login(username, password string) (*LoginResult, error) {
 	username = strings.TrimSpace(username)
 	if username == "" || password == "" {
@@ -40,6 +44,20 @@ func (s *AuthService) Login(username, password string) (*LoginResult, error) {
 	if err != nil || bcrypt.CompareHashAndPassword([]byte(user.PasswordHash), []byte(password)) != nil {
 		return nil, errors.New("用户名或密码错误")
 	}
+	return s.loginUser(user)
+}
+
+// LoginByUserID 供企业微信授权登录使用：用户身份已由企业微信校验，这里只校验平台侧状态。
+func (s *AuthService) LoginByUserID(userID uint64) (*LoginResult, error) {
+	user, err := s.userRepo.FindByID(userID)
+	if err != nil {
+		return nil, errors.New("账号不存在")
+	}
+	return s.loginUser(user)
+}
+
+// loginUser 统一生成登录结果：校验状态、加载角色、签发 Token、更新登录时间。
+func (s *AuthService) loginUser(user *model.User) (*LoginResult, error) {
 	if user.Status != "active" {
 		return nil, errors.New("账号已被停用")
 	}
@@ -66,6 +84,7 @@ func (s *AuthService) Login(username, password string) (*LoginResult, error) {
 	}, nil
 }
 
+// HashPassword 生成 bcrypt 密码哈希，密码长度至少 6 位。
 func HashPassword(password string) (string, error) {
 	if len(password) < 6 {
 		return "", errors.New("密码至少需要 6 位")

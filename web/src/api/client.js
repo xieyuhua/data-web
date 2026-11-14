@@ -1,5 +1,11 @@
+// 统一的 API 请求封装：
+// - 自动携带 JWT（Authorization: Bearer xxx）
+// - 自动序列化 JSON，FormData 原样提交
+// - 统一解析后端 { code, message, data } 结构，直接返回 data
+// - 401 时清理本地登录态并跳转登录页（登录与企业微信接口除外）
 const API_BASE = import.meta.env.VITE_API_BASE || '/api/v1'
 
+// 业务/网络错误统一包装，页面可通过 getErrorMessage 获取提示文案
 export class ApiError extends Error {
   constructor(message, status = 0, data = null) {
     super(message)
@@ -9,6 +15,7 @@ export class ApiError extends Error {
   }
 }
 
+// 核心请求方法：拼接 baseURL、注入 token、解析响应、统一错误处理
 export async function request(path, options = {}) {
   const token = localStorage.getItem('bi_token')
   const headers = new Headers(options.headers || {})
@@ -25,7 +32,8 @@ export async function request(path, options = {}) {
     payload = await response.json().catch(() => null)
   }
   if (!response.ok) {
-    if (response.status === 401 && !path.includes('/auth/login')) {
+    // 登录与企业微信授权接口的 401 交给页面展示，不做全局跳转，避免回调页丢失错误信息
+    if (response.status === 401 && !path.includes('/auth/login') && !path.includes('/auth/wecom/')) {
       localStorage.removeItem('bi_token')
       localStorage.removeItem('bi_user')
       if (!location.pathname.startsWith('/login') && !location.pathname.startsWith('/share/')) {
@@ -40,6 +48,7 @@ export async function request(path, options = {}) {
   return payload?.data
 }
 
+// 常用请求方法的语法糖
 export const api = {
   get(path) {
     return request(path)
@@ -53,11 +62,13 @@ export const api = {
   delete(path) {
     return request(path, { method: 'DELETE' })
   },
+  // 上传：以 multipart/form-data 提交单个文件（如 Excel 导入）
   async upload(path, file) {
     const form = new FormData()
     form.append('file', file)
     return request(path, { method: 'POST', body: form })
   },
+  // 下载：用原生 fetch 获取二进制流，再通过临时 <a> 标签触发浏览器下载
   async download(path, filename) {
     const token = localStorage.getItem('bi_token')
     const response = await fetch(`${API_BASE}${path}`, {
@@ -85,6 +96,7 @@ export const api = {
   },
 }
 
+// 从异常对象中提取用户可读的提示文案
 export function getErrorMessage(error) {
   return error?.message || '操作失败，请稍后重试'
 }

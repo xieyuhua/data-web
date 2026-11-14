@@ -1,11 +1,16 @@
+<!-- 通用图表渲染器：基于 ECharts 封装折线图、柱状图、堆叠图、组合图、散点图、环形图、仪表盘等，
+     统一处理图例中文名、坐标轴数字缩写、点击事件回调与容器尺寸自适应 -->
 <script setup>
 import { onBeforeUnmount, onMounted, ref, watch } from 'vue'
-import * as echarts from 'echarts'
+import echarts from '../utils/echarts'
 import { formatValue, toNumber } from '../utils/format'
 
 const props = defineProps({
+  // 查询结果：{ columns: [...], rows: [[...]] }
   data: { type: Object, default: null },
+  // 图表配置：xField 维度、yFields 指标系列、排序、TopN、单位等
   config: { type: Object, default: () => ({}) },
+  // 图表类型：line / bar / bar_h / bar_stacked / combo / area / scatter / donut / gauge
   chartType: { type: String, default: 'line' },
   height: { type: String, default: '230px' },
 })
@@ -14,8 +19,10 @@ const emit = defineEmits(['item-click'])
 
 const container = ref(null)
 let chart = null
+// 容器尺寸监听器：页面宽度变化时自动 resize，保证自适应
 let observer = null
 
+// 统一色板，保证各图表风格一致
 const palette = ['#0F766E', '#E8A13A', '#4A78B8', '#D15F5F', '#14B8A6', '#7C6BB0', '#6B8E4E']
 
 function rawRows() {
@@ -31,6 +38,7 @@ function columnIndex(field, fallback) {
   return index >= 0 ? index : fallback
 }
 
+// 从数据中自动识别数值列（抽样前 8 行全部为数字即视为指标列）
 function numericFields() {
   return columns().filter((column, index) => {
     const sample = rawRows().slice(0, 8).map((row) => row[index]).filter((value) => value !== null && value !== '')
@@ -115,6 +123,7 @@ function resolveSeries(config, fallbackType = 'line') {
     }))
 }
 
+// 坐标轴数字格式化：超过 1 亿显示“亿”，超过 1 万显示“万”
 function axisNumber(value) {
   const number = Number(value)
   if (!Number.isFinite(number)) return value
@@ -123,6 +132,7 @@ function axisNumber(value) {
   return number.toLocaleString('zh-CN', { maximumFractionDigits: 1 })
 }
 
+// 类目轴配置（横向柱图时压缩标签宽度）
 function categoryAxis(data, horizontal = false) {
   return {
     type: 'category',
@@ -140,6 +150,7 @@ function categoryAxis(data, horizontal = false) {
   }
 }
 
+// 数值轴配置：虚线网格 + 缩写刻度
 function valueAxis(name = '') {
   return {
     type: 'value',
@@ -150,6 +161,7 @@ function valueAxis(name = '') {
   }
 }
 
+// tooltip 公共配置，数值统一按看板单位格式化
 function tooltipBase(config, trigger = 'axis') {
   return {
     trigger,
@@ -162,6 +174,7 @@ function tooltipBase(config, trigger = 'axis') {
   }
 }
 
+// 折线 / 面积图
 function buildLineOption(areaMode = false) {
   const config = props.config || {}
   const xField = config.xField || columns()[0]
@@ -212,6 +225,7 @@ function buildLineOption(areaMode = false) {
   }
 }
 
+// 柱状图（支持横向、堆叠）
 function buildBarOption({ horizontal = false, stacked = false } = {}) {
   const config = props.config || {}
   const xField = config.xField || columns()[0]
@@ -274,6 +288,7 @@ function buildBarOption({ horizontal = false, stacked = false } = {}) {
   }
 }
 
+// 组合图：同一维度下柱状 + 折线（可配置双 Y 轴）
 function buildComboOption() {
   const config = props.config || {}
   const xField = config.xField || columns()[0]
@@ -319,6 +334,7 @@ function buildComboOption() {
   }
 }
 
+// 散点图：可配置气泡大小字段
 function buildScatterOption() {
   const config = props.config || {}
   const xField = config.xField || numericFields()[0] || columns()[0]
@@ -375,6 +391,7 @@ function buildScatterOption() {
   }
 }
 
+// 环形图 / 饼图（支持玫瑰图）
 function buildDonutOption() {
   const config = props.config || {}
   const xField = config.xField || columns()[0]
@@ -418,6 +435,7 @@ function buildDonutOption() {
   }
 }
 
+// 仪表盘：用于目标达成率展示
 function buildGaugeOption() {
   const config = props.config || {}
   const row = rows()[0] || []
@@ -485,6 +503,7 @@ function buildGaugeOption() {
   }
 }
 
+// 根据图表类型分发到对应的配置构建函数
 function buildOption() {
   switch (props.chartType) {
     case 'donut':
@@ -509,6 +528,7 @@ function buildOption() {
   }
 }
 
+// 初始化或更新图表实例，并转发点击事件给父组件（用于下钻/联动/明细）
 function render() {
   if (!container.value) return
   if (!chart) {
@@ -526,6 +546,7 @@ function render() {
   chart.resize()
 }
 
+// 导出当前图表为 PNG 图片（2 倍像素，白底）
 function exportImage(filename = 'chart') {
   if (!chart) return
   const url = chart.getDataURL({ type: 'png', pixelRatio: 2, backgroundColor: '#ffffff' })
@@ -539,6 +560,7 @@ function exportImage(filename = 'chart') {
 
 defineExpose({ exportImage })
 
+// 组件挂载后渲染，并监听容器尺寸变化实现自适应
 onMounted(() => {
   render()
   observer = new ResizeObserver(() => chart?.resize())

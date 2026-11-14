@@ -1,3 +1,4 @@
+<!-- 看板列表页（首页）：展示当前账号有权查看的全部看板，支持进入与新建。 -->
 <script setup>
 import { computed, onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
@@ -58,6 +59,7 @@ const cardBars = [
   [46, 70, 56, 84, 62, 74, 96],
 ]
 
+// 加载当前账号可见的看板列表
 async function load() {
   loading.value = true
   try {
@@ -74,6 +76,7 @@ async function load() {
   }
 }
 
+// 打开指定看板
 function open(item) {
   router.push(`/dashboards/${item.id}`)
 }

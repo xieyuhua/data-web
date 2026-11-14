@@ -1,3 +1,4 @@
+<!-- 看板查看页：按布局渲染组件，支持筛选、时间区间、自动刷新、图表联动、分享与导出。 -->
 <script setup>
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
@@ -78,6 +79,7 @@ const resultMap = computed(() => {
   return map
 })
 
+// 解析看板布局配置
 function parseLayout(value) {
   if (!value) return { settings: {}, widgets: [] }
   if (typeof value === 'string') {
@@ -90,12 +92,14 @@ function parseLayout(value) {
   return value
 }
 
+// 计算组件栅格布局样式
 function widgetStyle(widget) {
   return {
     gridColumn: `span ${Math.min(12, Math.max(1, Number(widget.w) || 12))}`,
   }
 }
 
+// 清理自动刷新定时器
 function clearRefresh() {
   if (refreshTimer) {
     clearInterval(refreshTimer)
@@ -103,6 +107,7 @@ function clearRefresh() {
   }
 }
 
+// 按看板设置启动自动刷新
 function setupRefresh() {
   clearRefresh()
   const seconds = Number(settings.value.refresh_seconds || 0)
@@ -116,6 +121,7 @@ function isMultiFilter(item) {
   return item?.type === 'multiselect'
 }
 
+// 规范化筛选值
 function normalizeFilterValue(item, value) {
   if (isMultiFilter(item)) {
     if (Array.isArray(value)) return value
@@ -142,11 +148,13 @@ function activeFilters() {
   return filters
 }
 
+// 把筛选条件拼接为查询参数
 function appendFilters(query) {
   const filters = activeFilters()
   if (Object.keys(filters).length) query.set('filters', JSON.stringify(filters))
 }
 
+// 从地址栏读取筛选条件
 function readRouteFilters() {
   const raw = route.query.filters
   if (!raw) return null
@@ -159,6 +167,7 @@ function readRouteFilters() {
   }
 }
 
+// 初始化筛选器默认值
 function syncFilterDefaults() {
   const next = {}
   for (const item of filterDefs.value) {
@@ -175,6 +184,7 @@ function syncFilterDefaults() {
   filterValues.value = next
 }
 
+// 筛选变化后刷新数据
 function handleFilterChange(next) {
   filterValues.value = { ...next }
   syncFilterQuery()
@@ -221,6 +231,7 @@ function handleLinkFilter(payload = {}) {
   ElMessage.success(`已联动筛选：${label} = ${value}`)
 }
 
+// 加载看板配置
 async function load() {
   loading.value = true
   error.value = ''
@@ -239,6 +250,7 @@ async function load() {
   }
 }
 
+// 加载看板组件数据
 async function loadData(silent = false) {
   if (!dashboardId.value) return
   if (silent) refreshing.value = true
@@ -258,6 +270,7 @@ async function loadData(silent = false) {
   }
 }
 
+// 快捷时间范围：最近 N 天
 function chooseRange(days) {
   rangeDays.value = days
   rangeKey.value = `${days}d`
@@ -265,6 +278,7 @@ function chooseRange(days) {
   loadData()
 }
 
+// 快捷时间范围：本月 / 上月
 function chooseMonth(offset) {
   rangeDays.value = 0
   rangeKey.value = offset === 0 ? 'month' : 'last-month'
@@ -272,6 +286,7 @@ function chooseMonth(offset) {
   loadData()
 }
 
+// 自定义时间范围
 function chooseCustom(value) {
   if (!value || !value[0]) return
   rangeDays.value = 0
@@ -279,16 +294,19 @@ function chooseCustom(value) {
   loadData()
 }
 
+// 调用浏览器打印当前看板
 function printPage() {
   window.print()
 }
 
+// 生成安全的导出文件名
 function safeFilename(value) {
   return String(value || '')
     .replace(/[\\/:*?"<>|]/g, '_')
     .slice(0, 60)
 }
 
+// 导出看板（图片 / Excel 等）
 async function handleExport(command) {
   if (exporting.value || !dashboardId.value) return
   exporting.value = true
@@ -321,6 +339,7 @@ async function handleExport(command) {
   }
 }
 
+// 复制当前看板
 async function duplicate() {
   try {
     const item = await api.post(`/dashboards/${dashboardId.value}/duplicate`)
@@ -331,6 +350,7 @@ async function duplicate() {
   }
 }
 
+// 删除当前看板
 async function remove() {
   try {
     await ElMessageBox.confirm('删除后看板与布局将无法恢复，确认删除？', '删除看板', {

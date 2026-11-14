@@ -16,6 +16,7 @@ import (
 	"bi-platform/internal/model"
 )
 
+// Recipient 推送接收人：携带企业微信 UserID 或微信 OpenID。
 type Recipient struct {
 	UserID       uint64 `json:"user_id"`
 	Name         string `json:"name"`
@@ -23,6 +24,7 @@ type Recipient struct {
 	WechatOpenID string `json:"wechat_open_id"`
 }
 
+// Payload 推送内容：标题、正文、跳转链接与卡片样式。
 type Payload struct {
 	TemplateChannel string `json:"template_channel"`
 	Title           string `json:"title"`
@@ -32,11 +34,13 @@ type Payload struct {
 	AccentColor     string `json:"accent_color"`
 }
 
+// Result 单次发送结果：sent / simulated / skipped / failed。
 type Result struct {
 	Status  string `json:"status"`
 	Message string `json:"message"`
 }
 
+// Sender 推送发送器，负责调用企业微信 / 微信接口并缓存 access_token。
 type Sender struct {
 	client    *http.Client
 	allowMock bool
@@ -44,11 +48,13 @@ type Sender struct {
 	tokens    map[string]cachedToken
 }
 
+// cachedToken access_token 内存缓存。
 type cachedToken struct {
 	Value     string
 	ExpiresAt time.Time
 }
 
+// NewSender 创建发送器；allowMock 为 true 时未配置凭证也返回模拟成功。
 func NewSender(allowMock bool) *Sender {
 	return &Sender{
 		client:    &http.Client{Timeout: 12 * time.Second},
@@ -57,6 +63,7 @@ func NewSender(allowMock bool) *Sender {
 	}
 }
 
+// WeComConfig 企业微信应用配置（AgentID 用于应用消息，WebhookURL 用于群机器人）。
 type WeComConfig struct {
 	CorpID     string `json:"corp_id"`
 	AgentID    int    `json:"agent_id"`
@@ -65,6 +72,7 @@ type WeComConfig struct {
 	DryRun     bool   `json:"dry_run"`
 }
 
+// WeChatConfig 微信公众号模板消息配置。
 type WeChatConfig struct {
 	AppID      string `json:"app_id"`
 	Secret     string `json:"secret"`
@@ -72,6 +80,7 @@ type WeChatConfig struct {
 	DryRun     bool   `json:"dry_run"`
 }
 
+// Send 按模板渠道分发到企业微信或微信发送器。
 func (s *Sender) Send(ctx context.Context, config model.ChannelConfig, recipient Recipient, payload Payload) Result {
 	if payload.TemplateChannel == "wecom_text" || payload.TemplateChannel == "wecom_textcard" {
 		return s.sendWeCom(ctx, config, recipient, payload)

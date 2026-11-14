@@ -16,12 +16,14 @@ import (
 	"bi-platform/internal/repository"
 )
 
+// ShareService 分享链接业务服务：生成 Token、校验有效期 / 次数、解析组织范围。
 type ShareService struct {
 	repo     *repository.ShareRepository
 	dashRepo *repository.DashboardRepository
 	cfg      config.Config
 }
 
+// ShareCreated 新建分享链接的返回结果（Token 只在此处返回一次）。
 type ShareCreated struct {
 	ID        uint64    `json:"id"`
 	Token     string    `json:"token"`
@@ -30,6 +32,7 @@ type ShareCreated struct {
 	MaxViews  int       `json:"max_views"`
 }
 
+// NewShareService 创建分享服务。
 func NewShareService(repo *repository.ShareRepository, dashRepo *repository.DashboardRepository, cfg config.Config) *ShareService {
 	return &ShareService{repo: repo, dashRepo: dashRepo, cfg: cfg}
 }
@@ -75,6 +78,7 @@ func (s *ShareService) absoluteURL(baseURL, token string) string {
 	return base + "/share/" + token
 }
 
+// Resolve 解析并校验分享 Token，同时累加访问次数。
 func (s *ShareService) Resolve(token string) (*model.ShareLink, []uint64, error) {
 	return s.resolve(token, true)
 }
@@ -106,10 +110,12 @@ func (s *ShareService) resolve(token string, countView bool) (*model.ShareLink, 
 	return item, parseIDs(item.OrgIDs), nil
 }
 
+// List 查询分享链接列表。
 func (s *ShareService) List(userID uint64, isAdmin bool) ([]model.ShareLink, error) {
 	return s.repo.ListByUser(userID, isAdmin)
 }
 
+// Revoke 撤销分享链接。
 func (s *ShareService) Revoke(id, userID uint64, isAdmin bool) error {
 	return s.repo.Revoke(id, userID, isAdmin)
 }

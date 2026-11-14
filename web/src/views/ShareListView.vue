@@ -1,3 +1,4 @@
+<!-- 分享管理页：查看、创建、复制与撤销授权分享链接，展示访问次数与到期时间。 -->
 <script setup>
 import { computed, onMounted, reactive, ref } from 'vue'
 import { Check, Copy, Link2, Plus, RefreshCw, ShieldCheck, Trash2 } from 'lucide-vue-next'
@@ -35,6 +36,7 @@ const stats = computed(() => {
   }
 })
 
+// 计算分享链接状态（有效 / 已过期 / 已撤销）
 function shareStatus(item) {
   if (item.revoked) return { key: 'revoked', label: '已撤销', className: 'tag-red' }
   if (item.expires_at && new Date(item.expires_at).getTime() < Date.now()) {
@@ -46,6 +48,7 @@ function shareStatus(item) {
   return { key: 'active', label: '有效', className: 'tag-green' }
 }
 
+// 加载分享链接列表
 async function load(silent = false) {
   if (silent) refreshing.value = true
   else loading.value = true
@@ -64,6 +67,7 @@ async function load(silent = false) {
   }
 }
 
+// 打开新建分享弹窗
 function openCreate() {
   form.dashboard_id = dashboards.value[0]?.id || null
   form.expire_hours = 24
@@ -72,6 +76,7 @@ function openCreate() {
   createVisible.value = true
 }
 
+// 创建新的授权分享链接
 async function createShare() {
   if (!form.dashboard_id) {
     ElMessage.warning('请选择要分享的看板')
@@ -93,6 +98,7 @@ async function createShare() {
   }
 }
 
+// 复制分享链接到剪贴板
 async function copyLink() {
   if (!created.value?.url) return
   try {
@@ -108,6 +114,7 @@ async function copyLink() {
   ElMessage.success('链接已复制')
 }
 
+// 撤销分享链接，撤销后立即失效
 async function revoke(item) {
   try {
     await ElMessageBox.confirm('撤销后该链接会立即失效，无法恢复。', '撤销分享链接', {

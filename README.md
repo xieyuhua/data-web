@@ -31,7 +31,7 @@
 - **用户与角色**：角色绑定数据范围与权限点；用户绑定组织；通讯录支持 Excel 模板导入与导出。
 - **授权分享**：分享链接带数据范围快照、有效期、最大访问次数、撤销；公共页无需登录。
 - **定时推送**：Cron 调度；企业微信文本 / 文本卡片 / 机器人 Webhook；微信公众号模板消息；推送模板样式后台可配；每个接收人按自身数据范围生成独立授权链接。
-- **审计与记录**：审计日志、推送记录（sent / simulated / skipped / failed）。
+- **审计与记录**：后台自动记录写操作、登录（含失败）、导出与分享访问，包含账号、IP、状态码、耗时；分享 Token 在日志中脱敏；管理后台可按关键词、操作类型、状态与日期筛选并分页查看。
 
 ---
 
@@ -317,7 +317,100 @@ AND ({{filter_has:channel}} = 0 OR channel IN ({{filter_in:channel}}))
 
 ---
 
-## 8. 组织架构导入 / 导出
+## 8. 企业微信组织同步与授权登录
+
+### 8.1 企业微信后台准备
+
+1. 企业微信管理后台 → 应用管理 → 自建 → 创建应用，记录 `CorpID`（我的企业 → 企业信息）、`AgentID` 与应用 `Secret`。
+2. 在「应用 → 网页授权及 JS-SDK」中配置可信域名；使用浏览器扫码登录时，还需在「企业微信授权登录」中配置授权回调域。
+3. 为应用开启通讯录读取权限（部门列表、成员列表），否则同步会返回 `60011`。
+4. 平台侧回调地址固定为：`https://你的域名/api/v1/auth/wecom/callback`。
+
+### 8.2 平台配置
+
+管理员登录后进入「组织架构 → 企业微信同步」：
+
+| 配置项 | 说明 |
+| --- | --- |
+| CorpID | 企业微信企业 ID |
+| AgentID | 自建应用 AgentID，扫码登录必填 |
+| 应用 Secret | AES-GCM 加密存储，接口只返回掩码；留空表示不修改 |
+| 启用组织同步 | 开启后才允许发起同步任务 |
+| 同步成员 | 按企微 UserID 创建 / 更新平台账号 |
+| 默认角色 | 同步新建成员的初始角色，留空使用权限最低的角色 |
+| 组织编码前缀 | 默认 `WECOM_DEPT_`，用于生成唯一组织编码 |
+| 层级映射 | 部门层级 → 集团 / 大区 / 区域 / 门店 |
+| 启用企业微信登录 | 登录页展示企业微信登录入口 |
+| 登录方式 | `auto` 企微内静默 / 浏览器扫码；`oauth` 仅静默；`qr` 仅扫码 |
+| 企微内自动登录 | 企业微信客户端打开登录页时自动授权 |
+
+保存后点击「测试连接」，可验证凭证并查看部门与成员数量。
+
+### 8.3 异步同步与进度
+
+- 同步任务在后台 Goroutine 执行，接口立即返回任务快照。
+- 前端每 1.5 秒轮询 `/api/v1/admin/wecom/jobs/:id`，展示 `processed / total`、部门数以及新增 / 更新 / 跳过 / 失败明细。
+- 同一时间只允许一个同步任务，重复发起返回 `409`。
+- 服务重启时残留的 `pending / running` 任务会被标记为 `failed`。
+- 部门按 `external_source=wecom + external_id` 幂等更新，不覆盖手工维护的组织编码。
+- 成员按 `WecomUserID` 匹配；历史账号用户名恰好等于企微 UserID 时自动建立绑定。
+- 已离职成员跳过；状态异常的成员同步为停用。
+- 可选择「停用企业微信中已移除的部门」，仅在本次任务无失败时执行。
+
+### 8.4 登录链路
+
+企业微信客户端内：
+
+```text
+企业微信内置浏览器
+→ /api/v1/auth/wecom/authorize?mode=auto
+→ 后端识别 UA=wxwork，返回 snsapi_base 静默授权地址
+→ /api/v1/auth/wecom/callback 换取成员 UserID
+→ 查找平台账号并签发 3 分钟一次性 ticket
+→ 302 到前端 /wecom/callback?ticket=...
+→ 前端 POST /api/v1/auth/wecom/exchange 换取正式 JWT
+```
+
+普通浏览器：
+
+```text
+登录页点击「企业微信扫码登录」
+→ 后端返回 wwlogin/sso/login?login_type=CorpApp 扫码地址
+→ 扫码授权后回调，后续流程与企微内一致
+```
+
+安全约束：
+
+- 长期 JWT 不进入 URL，只使用一次性 ticket。
+- `state` 使用 JWT 签名，10 分钟有效，登录与绑定用途分离。
+- 回调跳转只允许站内相对路径，防止开放重定向。
+- 未绑定平台账号的用户会提示联系管理员。
+
+### 8.5 账号绑定
+
+- 管理员可在「用户与角色」中直接填写企业微信 UserID。
+- 普通用户可在「数据权限」页使用「绑定企业微信」，授权后自动写入绑定关系。
+- 「解除绑定」后只能使用账号密码登录。
+
+### 8.6 相关接口
+
+```http
+GET    /api/v1/auth/wecom/config
+GET    /api/v1/auth/wecom/authorize?mode=auto&redirect=/dashboards
+GET    /api/v1/auth/wecom/callback
+POST   /api/v1/auth/wecom/exchange
+GET    /api/v1/auth/wecom/bind-url?redirect=/access
+DELETE /api/v1/auth/wecom/bind
+
+GET    /api/v1/admin/wecom/config
+PUT    /api/v1/admin/wecom/config
+POST   /api/v1/admin/wecom/test
+POST   /api/v1/admin/wecom/sync
+GET    /api/v1/admin/wecom/jobs?limit=20
+GET    /api/v1/admin/wecom/jobs/:id
+```
+
+## 9. 组织架构导入 / 导出
 
 管理后台 → 组织架构 → 导出，得到 `.xlsx`，表头：
 
@@ -338,7 +431,7 @@ AND ({{filter_has:channel}} = 0 OR channel IN ({{filter_in:channel}}))
 
 ---
 
-## 9. 配置项
+## 10. 配置项
 
 | 变量 | 默认值 | 说明 |
 |---|---|---|
@@ -368,7 +461,7 @@ DB_DSN=bi:bi_password@tcp(127.0.0.1:3306)/bi_platform?charset=utf8mb4&parseTime=
 
 ---
 
-## 10. 主要接口
+## 11. 主要接口
 
 统一响应：
 
@@ -513,18 +606,24 @@ POST   /api/v1/admin/push/subscriptions/:id/send
 GET  /api/v1/admin/push/channels
 PUT  /api/v1/admin/push/channels/:channel
 GET  /api/v1/admin/push/records?limit=100
+POST /api/v1/admin/push/records/:id/retry   # 重试失败记录所属任务
 GET  /api/v1/admin/push/preview?template_id=&dashboard_id=
-GET  /api/v1/admin/audit-logs
+GET  /api/v1/admin/audit-logs?page=1&page_size=20&keyword=&action=&status=&start=&end=
 ```
+
+`audit-logs` 返回 `{ items, total, page, page_size, stats, actions }`；`status` 支持
+`success`（2xx）、`failed`（≥400）、`server`（≥500）或具体状态码。
 
 ---
 
-## 11. 前端说明
+## 12. 前端说明
 
 - 自适应布局：桌面侧栏 + 移动端抽屉；看板 12 栅格在窄屏自动堆叠；
 - 路由守卫：未登录跳 `/login`；`/admin/*` 仅管理员；`dashboard:create` 控制新建 / 编辑；
 - 公共分享页 `/share/:token` 不加载登录态、不调用 `useAuthStore`；
 - 图表统一由 `ChartRenderer` / `WidgetRenderer` 渲染，新增图表类型只需扩展组件映射；
+- ECharts 通过 `src/utils/echarts.js` 按需注册，构建时拆分为 `vendor-echarts` / `vendor-element` 等独立缓存块；
+- 审计日志页 `/admin/audit` 支持筛选、分页与明细抽屉，仅管理员可见；
 - 样式集中在 `src/assets/styles.css`，使用 CSS 变量便于换肤。
 
 构建：
@@ -538,7 +637,7 @@ npm run build
 
 ---
 
-## 12. 二次开发指引
+## 13. 二次开发指引
 
 ### 新增一个图表类型
 
@@ -564,7 +663,7 @@ npm run build
 
 ---
 
-## 13. 生产上线清单
+## 14. 生产上线清单
 
 - [ ] 更换 `JWT_SECRET`，长度 ≥ 32 位随机串；
 - [ ] `SEED_DEMO_DATA=false`，删除演示账号或改密；
@@ -579,7 +678,7 @@ npm run build
 
 ---
 
-## 14. 常见问题
+## 15. 常见问题
 
 **Q：登录后接口 401？**
 检查 `Authorization` 是否为 `Bearer <token>`，以及 `JWT_SECRET` 是否在重启后发生变化（旧 token 会失效）。
@@ -601,6 +700,6 @@ npm run build
 
 ---
 
-## 15. 许可
+## 16. 许可
 
 内部项目模板，可按需修改与二次分发。

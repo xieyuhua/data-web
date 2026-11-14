@@ -8,6 +8,7 @@ import (
 	"time"
 )
 
+// Config 平台运行配置，全部来自环境变量或 .env 文件。
 type Config struct {
 	Port            string
 	DBDriver        string
@@ -24,6 +25,7 @@ type Config struct {
 	SQLQueryTimeout time.Duration
 }
 
+// Load 读取配置：先加载 .env，再读取环境变量并填充默认值。
 func Load() Config {
 	loadDotEnv()
 	port := env("PORT", "8486")
@@ -71,8 +73,10 @@ func loadDotEnv() {
 	}
 }
 
+// Address 返回 HTTP 监听地址（固定端口 8486，可通过 PORT 覆盖）。
 func (c Config) Address() string { return ":" + c.Port }
 
+// Validate 校验关键配置：端口、JWT 密钥长度、数据库驱动类型。
 func (c Config) Validate() error {
 	if c.Port == "" {
 		return fmt.Errorf("PORT 不能为空")
@@ -88,6 +92,7 @@ func (c Config) Validate() error {
 	return nil
 }
 
+// env 读取环境变量，为空时使用默认值。
 func env(key, fallback string) string {
 	if value := os.Getenv(key); value != "" {
 		return value
@@ -95,6 +100,7 @@ func env(key, fallback string) string {
 	return fallback
 }
 
+// envInt 读取整型环境变量，解析失败时使用默认值。
 func envInt(key string, fallback int) int {
 	value, err := strconv.Atoi(os.Getenv(key))
 	if err != nil {
@@ -103,6 +109,7 @@ func envInt(key string, fallback int) int {
 	return value
 }
 
+// envBool 读取布尔环境变量，解析失败时使用默认值。
 func envBool(key string, fallback bool) bool {
 	value := os.Getenv(key)
 	if value == "" {

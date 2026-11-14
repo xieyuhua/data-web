@@ -1,10 +1,11 @@
+<!-- 登录页：支持账号密码登录与企业微信授权登录（企业微信客户端内默认走授权登录），并提供演示账号快捷填充。 -->
 <script setup>
 import { onMounted, reactive, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { ArrowRight, Eye, EyeOff, LockKeyhole, ShieldCheck, UserRound } from 'lucide-vue-next'
+import { ArrowRight, Eye, EyeOff, LockKeyhole, MessageSquare, ShieldCheck, UserRound } from 'lucide-vue-next'
 import AppBrand from '../components/AppBrand.vue'
 import { useAuthStore } from '../stores/auth'
-import { getErrorMessage } from '../api/client'
+import { api, getErrorMessage } from '../api/client'
 
 const auth = useAuthStore()
 const route = useRoute()
@@ -14,6 +15,14 @@ const form = reactive({ username: 'laozong', password: '123456' })
 const showPassword = ref(false)
 const error = ref('')
 const submitting = ref(false)
+
+// 是否处于企业微信内置浏览器；企微内默认走静默授权
+const inWecom = /wxwork/i.test(navigator.userAgent)
+// 登录页公开配置：是否启用企业微信登录、登录方式与自动登录开关
+const wecomConfig = reactive({ enabled: false, mode: 'auto', auto_login: false })
+const wecomLoading = ref(false)
+// 企业微信授权失败原因来自回调跳转参数
+const wecomError = ref(typeof route.query.wecom_error === 'string' ? route.query.wecom_error : '')
 
 const demoAccounts = [
   { username: 'laozong', password: '123456', name: '集团老总', scope: '全部组织数据' },
@@ -25,6 +34,8 @@ const demoAccounts = [
 ]
 
 onMounted(async () => {
+  // 先加载企业微信登录开关，再处理已有登录态
+  await loadWecomConfig()
   if (!auth.token) return
   try {
     await auth.fetchMe()
@@ -34,12 +45,46 @@ onMounted(async () => {
   }
 })
 
+// 读取登录页公开配置；企微内开启自动登录时直接跳转授权
+async function loadWecomConfig() {
+  try {
+    const data = await api.get('/auth/wecom/config')
+    Object.assign(wecomConfig, data || {})
+  } catch {
+    wecomConfig.enabled = false
+    return
+  }
+  if (wecomConfig.enabled && wecomConfig.auto_login && inWecom && !wecomError.value) {
+    await loginWithWecom()
+  }
+}
+
+// 请求企业微信授权地址：企微内静默授权，普通浏览器扫码登录
+async function loginWithWecom() {
+  if (wecomLoading.value) return
+  wecomLoading.value = true
+  wecomError.value = ''
+  try {
+    const mode = inWecom ? 'auto' : 'qr'
+    const redirect = typeof route.query.redirect === 'string' ? route.query.redirect : '/dashboards'
+    const data = await api.get(`/auth/wecom/authorize?mode=${mode}&redirect=${encodeURIComponent(redirect)}`)
+    if (!data?.url) throw new Error('企业微信登录地址生成失败')
+    // 跳转企业微信官方授权页，授权完成后由后端回调签发一次性 ticket
+    window.location.href = data.url
+  } catch (err) {
+    wecomError.value = getErrorMessage(err)
+    wecomLoading.value = false
+  }
+}
+
+// 一键填充演示账号，便于快速体验不同角色视角
 function pickDemo(account) {
   form.username = account.username
   form.password = account.password
   error.value = ''
 }
 
+// 提交登录表单，成功后跳转回 redirect 指定页面
 async function submit() {
   if (!form.username || !form.password) {
     error.value = '请输入用户名和密码'
@@ -110,6 +155,26 @@ async function submit() {
         <h2>登录经营工作台</h2>
         <p>使用企业账号登录，系统会自动加载你的角色与组织数据范围。</p>
 
+        <!-- 企业微信登录：企微内一键授权，普通浏览器扫码 -->
+        <div v-if="wecomConfig.enabled" class="wecom-login-block">
+          <button class="btn btn-primary login-submit" type="button" :disabled="wecomLoading" @click="loginWithWecom">
+            <MessageSquare :size="16" />
+            {{ wecomLoading ? '正在唤起企业微信…' : inWecom ? '企业微信一键登录' : '企业微信扫码登录' }}
+          </button>
+          <p class="wecom-login-tip">
+            {{
+              inWecom
+                ? '已检测到企业微信客户端，将使用企业微信身份静默授权，无需输入密码。'
+                : '使用企业微信扫码，授权后自动进入工作台。'
+            }}
+          </p>
+          <!-- 保留账号密码登录作为备选入口 -->
+          <div class="login-divider"><span>或使用账号密码登录</span></div>
+        </div>
+
+        <!-- 企业微信授权失败提示 -->
+        <div v-if="wecomError" class="login-error">{{ wecomError }}</div>
+
         <form class="login-form" @submit.prevent="submit">
           <label class="field-label" for="username">账号</label>
           <div class="input-wrap">
@@ -168,3 +233,38 @@ async function submit() {
     </section>
   </div>
 </template>
+
+<style scoped>
+.wecom-login-block {
+  margin-top: 26px;
+}
+
+.wecom-login-block .login-submit {
+  width: 100%;
+}
+
+.wecom-login-tip {
+  margin-top: 10px;
+  color: var(--muted);
+  font-size: 9.5px;
+  line-height: 1.6;
+  text-align: center;
+}
+
+.login-divider {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 22px 0 0;
+  color: var(--muted-light);
+  font-size: 9px;
+}
+
+.login-divider::before,
+.login-divider::after {
+  flex: 1;
+  height: 1px;
+  background: var(--line);
+  content: '';
+}
+</style>

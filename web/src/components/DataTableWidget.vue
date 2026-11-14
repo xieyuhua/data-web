@@ -1,3 +1,6 @@
+<!-- 数据表格组件：
+     支持列配置（格式、进度条、聚合方式）、点击列头排序、分页、合计行、
+     条件高亮（如低于阈值变红）以及 CSV 导出 -->
 <script setup>
 import { computed, ref, watch } from 'vue'
 import {
@@ -12,16 +15,20 @@ import { toNumber } from '../utils/format'
 import NumText from './NumText.vue'
 
 const props = defineProps({
+  // 查询结果：{ columns: [...], rows: [[...]] }
   data: { type: Object, default: null },
+  // 列配置、条件格式、是否显示合计行等
   config: { type: Object, default: () => ({}) },
   title: { type: String, default: '数据明细' },
 })
 
+// 排序与分页状态
 const sortField = ref('')
 const sortOrder = ref('')
 const page = ref(1)
 const pageSize = ref(10)
 
+// 列定义：优先使用配置中的列顺序/别名，未配置时按查询结果自动生成
 const columns = computed(() => {
   const source = props.data?.columns || []
   const configured = Array.isArray(props.config?.columns) ? props.config.columns : []
@@ -47,8 +54,10 @@ const columns = computed(() => {
   }))
 })
 
+// 原始行数据
 const rows = computed(() => props.data?.rows || [])
 
+// 排序后的行数据：数字列按数值排序，文本列按中文排序，空值始终排在末尾
 const sortedRows = computed(() => {
   const list = rows.value.map((row, index) => ({ row, index }))
   const column = columns.value.find((item) => item.field === sortField.value)
@@ -72,12 +81,14 @@ const sortedRows = computed(() => {
   return list.map((item, position) => ({ ...item, rank: position + 1 }))
 })
 
+// 分页计算
 const totalPages = computed(() => Math.max(1, Math.ceil(sortedRows.value.length / pageSize.value)))
 const pagedRows = computed(() => {
   const start = (page.value - 1) * pageSize.value
   return sortedRows.value.slice(start, start + pageSize.value)
 })
 
+// 每列的统计值（最大值用于进度条比例，总和用于合计行）
 const columnStats = computed(() => {
   const stats = {}
   for (const column of columns.value) {
@@ -95,6 +106,7 @@ const columnStats = computed(() => {
   return stats
 })
 
+// 条件格式配置：对指定字段按“大于/小于阈值”着色告警
 const conditional = computed(() => {
   const cfg = props.config?.conditional || {}
   if (!cfg.field) return null
@@ -107,6 +119,7 @@ const conditional = computed(() => {
   }
 })
 
+// 合计行：数值列求和，百分比列默认取平均
 const summaryRow = computed(() => {
   if (!props.config?.showSummary || !rows.value.length) return null
   const values = columns.value.map((column, index) => {
@@ -123,6 +136,7 @@ const summaryRow = computed(() => {
   return { columns: columns.value, values }
 })
 
+// 数据变化后重置分页与排序
 watch(
   () => props.data,
   () => {
@@ -132,20 +146,24 @@ watch(
   },
 )
 
+// 每页条数变化时回到第一页
 watch(pageSize, () => {
   page.value = 1
 })
 
+// 取单元格原始值
 function cellValue(row, column) {
   return column.index >= 0 ? row[column.index] : ''
 }
 
+// 是否展示数值进度条
 function showProgress(column) {
   if (column.progress) return true
   // 兼容历史看板：销售额列默认展示数值条形，可在编辑器关闭。
   return column.field === 'revenue' && column.progress !== false && column.format !== 'text'
 }
 
+// 进度条宽度：相对该列最大值计算，最小保留 2% 便于看清
 function progressWidth(row, column) {
   const stats = columnStats.value[column.field]
   const max = Math.abs(stats?.max || 0)
@@ -154,6 +172,7 @@ function progressWidth(row, column) {
   return `${Math.max(2, Math.min(100, (value / max) * 100))}%`
 }
 
+// 条件高亮样式，未命中规则返回 undefined
 function cellAlertStyle(row, column) {
   const rule = conditional.value
   if (!rule || rule.field !== column.field) return undefined
@@ -163,6 +182,7 @@ function cellAlertStyle(row, column) {
   return { color: rule.color, background: rule.background, fontWeight: 650 }
 }
 
+// 列头点击排序：升序 -> 降序 -> 取消排序
 function toggleSort(column) {
   if (sortField.value !== column.field) {
     sortField.value = column.field
@@ -181,6 +201,7 @@ function toggleSort(column) {
   sortOrder.value = 'asc'
 }
 
+// CSV 单元格转义：以 = + @ 等开头的文本加单引号，防止 Excel 公式注入
 function csvCell(value) {
   if (value === null || value === undefined) return ''
   const text = String(value)
@@ -190,6 +211,7 @@ function csvCell(value) {
   return text
 }
 
+// 导出当前排序结果（不分页，导出全部行）
 function exportCsv() {
   const header = columns.value.map((column) => column.label)
   const lines = [header]

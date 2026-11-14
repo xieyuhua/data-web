@@ -1,3 +1,4 @@
+<!-- 经营目标管理页：维护基础任务与挑战任务，按区域、门店导入目标任务并跟踪达成率。 -->
 <script setup>
 import { computed, onMounted, reactive, ref } from 'vue'
 import {
@@ -98,6 +99,7 @@ const periodOptions = computed(() => {
 const aheadCount = computed(() => rows.value.filter((item) => item.status === 'ahead').length)
 const behindCount = computed(() => rows.value.filter((item) => item.status === 'behind').length)
 
+// 计算默认周期值
 function currentPeriod(type) {
   const now = new Date()
   if (type === 'quarter') return `${now.getFullYear()}-Q${Math.floor(now.getMonth() / 3) + 1}`
@@ -105,6 +107,7 @@ function currentPeriod(type) {
   return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`
 }
 
+// 目标状态对应的文案与样式
 function statusMeta(status) {
   const map = {
     ahead: { label: '超前', className: 'tag-green' },
@@ -114,15 +117,18 @@ function statusMeta(status) {
   return map[status] || { label: status || '—', className: '' }
 }
 
+// 周期类型转中文（月 / 季 / 年）
 function periodTypeLabel(type) {
   const map = { month: '月度', quarter: '季度', year: '年度', custom: '区间' }
   return map[type] || type || '—'
 }
 
+// 任务类型转中文（基础任务 / 挑战任务）
 function taskTypeLabel(value) {
   return value === 'challenge' ? '挑战任务' : '基础任务'
 }
 
+// 加载经营目标列表
 async function load() {
   loading.value = true
   try {
@@ -147,6 +153,7 @@ async function load() {
   }
 }
 
+// 加载元数据（组织、指标、周期选项）
 async function loadMeta() {
   try {
     const [metricList, tree] = await Promise.all([api.get('/targets/metrics'), api.get('/orgs/tree')])
@@ -157,12 +164,14 @@ async function loadMeta() {
   }
 }
 
+// 切换周期类型并重置当前周期
 function changePeriodType(value) {
   period.value = currentPeriod(value)
   extraPeriods.value = []
   load()
 }
 
+// 重置目标表单
 function resetForm() {
   editingId.value = null
   Object.assign(form, {
@@ -179,11 +188,13 @@ function resetForm() {
   customRange.value = []
 }
 
+// 打开新建目标弹窗
 function openCreate() {
   resetForm()
   dialogVisible.value = true
 }
 
+// 打开编辑目标弹窗
 function openEdit(row) {
   const detail = targetMap.value[row.id]
   if (!detail) {
@@ -209,6 +220,7 @@ function openEdit(row) {
   dialogVisible.value = true
 }
 
+// 保存目标（区域 / 门店均可设置）
 async function save() {
   if (!form.org_id) {
     ElMessage.warning('请选择任务所属组织')
@@ -263,6 +275,7 @@ async function save() {
   }
 }
 
+// 删除目标
 async function remove(row) {
   try {
     await ElMessageBox.confirm(`确认删除任务「${row.name}」？`, '删除任务', {
@@ -278,6 +291,7 @@ async function remove(row) {
   }
 }
 
+// 导出目标数据（Excel）
 async function exportTargets() {
   try {
     await api.download('/targets/export', `经营任务-${new Date().toISOString().slice(0, 10)}.xlsx`)
@@ -287,6 +301,7 @@ async function exportTargets() {
   }
 }
 
+// 下载目标导入模板
 async function downloadTemplate() {
   try {
     await api.download('/targets/template', '经营任务导入模板.xlsx')
@@ -295,10 +310,12 @@ async function downloadTemplate() {
   }
 }
 
+// 触发导入文件选择
 function pickImport() {
   fileInput.value?.click()
 }
 
+// 导入目标 Excel 并展示结果
 async function onImportChange(event) {
   const file = event.target?.files?.[0]
   if (event.target) event.target.value = ''

@@ -10,14 +10,17 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
+// DatasourceHandler 数据源管理接口（仅管理员）。
 type DatasourceHandler struct {
 	service *service.DatasourceService
 }
 
+// NewDatasourceHandler 创建数据源处理器。
 func NewDatasourceHandler(service *service.DatasourceService) *DatasourceHandler {
 	return &DatasourceHandler{service: service}
 }
 
+// List 查询数据源列表（密码字段已脱敏）。
 func (h *DatasourceHandler) List(c *gin.Context) {
 	items, err := h.service.List()
 	if err != nil {
@@ -27,6 +30,7 @@ func (h *DatasourceHandler) List(c *gin.Context) {
 	response.OK(c, items)
 }
 
+// Create 新增数据源。
 func (h *DatasourceHandler) Create(c *gin.Context) {
 	var input service.DatasourceInput
 	if err := c.ShouldBindJSON(&input); err != nil {
@@ -41,6 +45,7 @@ func (h *DatasourceHandler) Create(c *gin.Context) {
 	response.Created(c, item)
 }
 
+// Update 更新数据源。
 func (h *DatasourceHandler) Update(c *gin.Context) {
 	id, _ := strconv.ParseUint(c.Param("id"), 10, 64)
 	var input service.DatasourceInput
@@ -56,6 +61,7 @@ func (h *DatasourceHandler) Update(c *gin.Context) {
 	response.OK(c, item)
 }
 
+// Delete 删除数据源。
 func (h *DatasourceHandler) Delete(c *gin.Context) {
 	id, _ := strconv.ParseUint(c.Param("id"), 10, 64)
 	if err := h.service.Delete(id); err != nil {
@@ -65,6 +71,7 @@ func (h *DatasourceHandler) Delete(c *gin.Context) {
 	response.OK(c, gin.H{"deleted": true})
 }
 
+// Test 测试数据源连通性；可携带未保存的临时连接参数。
 func (h *DatasourceHandler) Test(c *gin.Context) {
 	id, _ := strconv.ParseUint(c.Param("id"), 10, 64)
 	var input service.DatasourceInput

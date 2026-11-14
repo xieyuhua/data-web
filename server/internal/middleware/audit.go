@@ -81,7 +81,7 @@ func shouldAudit(c *gin.Context) bool {
 		return false
 	}
 	path := c.Request.URL.Path
-	if strings.HasSuffix(path, "/auth/login") {
+	if strings.HasSuffix(path, "/auth/login") || strings.HasSuffix(path, "/auth/wecom/callback") {
 		return true
 	}
 	if strings.Contains(path, "/export") {

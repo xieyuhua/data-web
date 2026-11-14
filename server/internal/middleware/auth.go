@@ -13,10 +13,12 @@ import (
 )
 
 const (
-	userKey = "bi.current_user"
-	roleKey = "bi.current_role"
+	userKey = "bi.current_user" // 当前登录用户在 gin.Context 中的键
+	roleKey = "bi.current_role" // 当前用户角色在 gin.Context 中的键
 )
 
+// Auth 登录鉴权中间件。
+// 从 Authorization: Bearer <token> 解析 JWT，并加载用户与角色放入上下文。
 func Auth(jwtManager *auth.Manager, userRepo *repository.UserRepository, roleRepo *repository.RoleRepository) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		header := c.GetHeader("Authorization")
@@ -45,6 +47,7 @@ func Auth(jwtManager *auth.Manager, userRepo *repository.UserRepository, roleRep
 	}
 }
 
+// RequirePermission 校验当前角色是否具备指定权限点。
 func RequirePermission(permission string) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		role := CurrentRole(c)
@@ -56,6 +59,7 @@ func RequirePermission(permission string) gin.HandlerFunc {
 	}
 }
 
+// RequireAdmin 仅允许平台管理员访问。
 func RequireAdmin() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		if !service.IsAdmin(CurrentRole(c)) {
@@ -66,6 +70,7 @@ func RequireAdmin() gin.HandlerFunc {
 	}
 }
 
+// CurrentUser 获取当前登录用户（未登录返回 nil）。
 func CurrentUser(c *gin.Context) *model.User {
 	value, ok := c.Get(userKey)
 	if !ok {
@@ -75,6 +80,7 @@ func CurrentUser(c *gin.Context) *model.User {
 	return user
 }
 
+// CurrentRole 获取当前登录用户角色。
 func CurrentRole(c *gin.Context) *model.Role {
 	value, ok := c.Get(roleKey)
 	if !ok {

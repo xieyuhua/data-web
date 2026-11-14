@@ -14,6 +14,8 @@ import (
 	"gorm.io/gorm"
 )
 
+// Run 写入演示数据：角色、组织、用户、销售事实、员工、目标、数据集与看板。
+// 各步骤内部均做了幂等判断，重复启动不会产生重复数据。
 func Run(db *gorm.DB) error {
 	if err := seedRoles(db); err != nil {
 		return err

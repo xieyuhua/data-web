@@ -1,3 +1,4 @@
+<!-- 公开授权看板页：通过分享 token 访问，无需登录；继承分享者数据权限，支持筛选、时间区间与图表联动。 -->
 <script setup>
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
@@ -58,6 +59,7 @@ const resultMap = computed(() => {
   return map
 })
 
+// 解析看板布局配置，兼容字符串与对象两种存储格式
 function parseLayout(value) {
   if (!value) return { settings: {}, widgets: [] }
   if (typeof value === 'string') {
@@ -70,16 +72,19 @@ function parseLayout(value) {
   return value
 }
 
+// 计算组件栅格布局样式
 function widgetStyle(widget) {
   return {
     gridColumn: `span ${Math.min(12, Math.max(1, Number(widget.w) || 12))}`,
   }
 }
 
+// 判断筛选器是否为多选类型
 function isMultiFilter(item) {
   return item?.type === 'multiselect'
 }
 
+// 规范化筛选值，多选统一转成数组
 function normalizeFilterValue(item, value) {
   if (isMultiFilter(item)) {
     if (Array.isArray(value)) return value
@@ -91,6 +96,7 @@ function normalizeFilterValue(item, value) {
   return value ?? ''
 }
 
+// 取当前生效的筛选条件
 function activeFilters() {
   const filters = {}
   for (const item of filterDefs.value) {
@@ -105,11 +111,13 @@ function activeFilters() {
   return filters
 }
 
+// 把筛选条件拼接为查询参数
 function appendFilters(query) {
   const filters = activeFilters()
   if (Object.keys(filters).length) query.set('filters', JSON.stringify(filters))
 }
 
+// 从地址栏读取筛选条件，分享链接后可保持视角
 function readRouteFilters() {
   const raw = route.query.filters
   if (!raw) return null
@@ -122,6 +130,7 @@ function readRouteFilters() {
   }
 }
 
+// 初始化筛选器默认值
 function syncFilterDefaults() {
   const next = {}
   for (const item of filterDefs.value) {
@@ -138,6 +147,7 @@ function syncFilterDefaults() {
   filterValues.value = next
 }
 
+// 筛选变化后重新加载看板数据
 function handleFilterChange(next) {
   filterValues.value = { ...next }
   syncFilterQuery()
@@ -148,6 +158,7 @@ function handleFilterChange(next) {
   }, 320)
 }
 
+// 把筛选条件同步到地址栏
 function syncFilterQuery() {
   const active = activeFilters()
   const query = { ...route.query }
@@ -162,6 +173,7 @@ function syncFilterQuery() {
   router.replace({ query }).catch(() => {})
 }
 
+// 图表点击联动：把点击的维度值写入对应筛选器
 function handleLinkFilter(payload = {}) {
   const key = String(payload.filterKey || '')
   if (!key || !filterDefs.value.some((item) => item.key === key)) return
@@ -180,6 +192,7 @@ function handleLinkFilter(payload = {}) {
   refresh()
 }
 
+// 加载公开看板的配置与数据
 async function load() {
   if (!token.value) return
   loading.value = true
@@ -211,6 +224,7 @@ async function load() {
   }
 }
 
+// 手动刷新看板数据
 async function refresh() {
   if (!token.value) return
   refreshing.value = true
@@ -233,6 +247,7 @@ async function refresh() {
   }
 }
 
+// 快捷时间范围：最近 N 天
 function chooseRange(days) {
   rangeDays.value = days
   rangeKey.value = `${days}d`
@@ -240,6 +255,7 @@ function chooseRange(days) {
   refresh()
 }
 
+// 快捷时间范围：本月 / 上月
 function chooseMonth(offset) {
   rangeDays.value = 0
   rangeKey.value = offset === 0 ? 'month' : 'last-month'
@@ -247,6 +263,7 @@ function chooseMonth(offset) {
   refresh()
 }
 
+// 自定义时间范围
 function chooseCustom(value) {
   if (!value || !value[0]) return
   rangeDays.value = 0

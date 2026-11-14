@@ -6,6 +6,7 @@ import (
 	"gorm.io/gorm"
 )
 
+// SalesAggregate 按组织聚合的销售指标（下钻看板使用）。
 type SalesAggregate struct {
 	OrgID       uint64
 	ActualValue float64
@@ -14,6 +15,7 @@ type SalesAggregate struct {
 	Customers   int
 }
 
+// EmployeeAggregate 按员工聚合的销售指标。
 type EmployeeAggregate struct {
 	EmployeeID  uint64
 	ActualValue float64
@@ -22,6 +24,7 @@ type EmployeeAggregate struct {
 	Customers   int
 }
 
+// DailyAggregate 按日期聚合的销售指标（趋势图使用）。
 type DailyAggregate struct {
 	StatDate    string
 	ActualValue float64
@@ -30,10 +33,14 @@ type DailyAggregate struct {
 	Customers   int
 }
 
+// DrillRepository 组织下钻查询仓储。
+// 负责读取组织下的销售事实数据、员工数据以及按日汇总数据。
 type DrillRepository struct{ db *gorm.DB }
 
+// NewDrillRepository 创建下钻查询仓储。
 func NewDrillRepository(db *gorm.DB) *DrillRepository { return &DrillRepository{db: db} }
 
+// EmployeesByOrgIDs 查询指定组织下的在职员工。
 func (r *DrillRepository) EmployeesByOrgIDs(orgIDs []uint64) ([]model.Employee, error) {
 	if len(orgIDs) == 0 {
 		return []model.Employee{}, nil
@@ -43,6 +50,7 @@ func (r *DrillRepository) EmployeesByOrgIDs(orgIDs []uint64) ([]model.Employee, 
 	return items, err
 }
 
+// FindEmployee 按主键查询员工。
 func (r *DrillRepository) FindEmployee(id uint64) (*model.Employee, error) {
 	var item model.Employee
 	if err := r.db.First(&item, id).Error; err != nil {
@@ -51,6 +59,7 @@ func (r *DrillRepository) FindEmployee(id uint64) (*model.Employee, error) {
 	return &item, nil
 }
 
+// SalesByOrg 按组织聚合销售数据；metricExpr 由上层按指标白名单拼装，避免 SQL 注入。
 func (r *DrillRepository) SalesByOrg(orgIDs []uint64, startDate, endDate, metricExpr string) ([]SalesAggregate, error) {
 	if len(orgIDs) == 0 {
 		return []SalesAggregate{}, nil
@@ -63,6 +72,7 @@ func (r *DrillRepository) SalesByOrg(orgIDs []uint64, startDate, endDate, metric
 	return rows, err
 }
 
+// SalesByEmployee 按员工聚合销售数据。
 func (r *DrillRepository) SalesByEmployee(employeeIDs []uint64, startDate, endDate, metricExpr string) ([]EmployeeAggregate, error) {
 	if len(employeeIDs) == 0 {
 		return []EmployeeAggregate{}, nil
@@ -76,6 +86,7 @@ func (r *DrillRepository) SalesByEmployee(employeeIDs []uint64, startDate, endDa
 }
 
 // SalesDailyByOrg 按天汇总组织销售，用于趋势图。
+// SalesDailyByOrg 按天汇总组织销售，用于组织趋势图。
 func (r *DrillRepository) SalesDailyByOrg(orgIDs []uint64, startDate, endDate, metricExpr string) ([]DailyAggregate, error) {
 	if len(orgIDs) == 0 {
 		return []DailyAggregate{}, nil
@@ -89,6 +100,7 @@ func (r *DrillRepository) SalesDailyByOrg(orgIDs []uint64, startDate, endDate, m
 }
 
 // SalesDailyByEmployee 按天汇总员工销售，用于员工趋势图。
+// SalesDailyByEmployee 按天汇总单个员工销售，用于员工趋势图。
 func (r *DrillRepository) SalesDailyByEmployee(employeeID uint64, startDate, endDate, metricExpr string) ([]DailyAggregate, error) {
 	if employeeID == 0 {
 		return []DailyAggregate{}, nil
@@ -101,4 +113,5 @@ func (r *DrillRepository) SalesDailyByEmployee(employeeID uint64, startDate, end
 	return rows, err
 }
 
+// DB 暴露底层连接。
 func (r *DrillRepository) DB() *gorm.DB { return r.db }

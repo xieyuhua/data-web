@@ -10,6 +10,7 @@ import (
 	"bi-platform/internal/repository"
 )
 
+// DrillOrgBrief 组织节点简要信息。
 type DrillOrgBrief struct {
 	ID            uint64 `json:"id"`
 	Name          string `json:"name"`
@@ -21,6 +22,7 @@ type DrillOrgBrief struct {
 	EmployeeCount int    `json:"employee_count"`
 }
 
+// DrillNode 下钻结果中的一行：组织 / 员工及其指标、目标达成情况。
 type DrillNode struct {
 	ID            uint64   `json:"id"`
 	Name          string   `json:"name"`
@@ -43,6 +45,7 @@ type DrillNode struct {
 	Drillable     bool     `json:"drillable"`
 }
 
+// DrillSummary 当前层级汇总指标。
 type DrillSummary struct {
 	ActualValue float64 `json:"actual_value"`
 	TargetValue float64 `json:"target_value"`
@@ -51,6 +54,7 @@ type DrillSummary struct {
 	NodeCount   int     `json:"node_count"`
 }
 
+// DrillResult 一次下钻查询的完整结果（面包屑、汇总、节点列表）。
 type DrillResult struct {
 	Current       DrillOrgBrief   `json:"current"`
 	Parent        *DrillOrgBrief  `json:"parent"`
@@ -68,6 +72,7 @@ type DrillResult struct {
 	Nodes         []DrillNode     `json:"nodes"`
 }
 
+// DrillService 组织下钻服务。
 type DrillService struct {
 	orgRepo    *repository.OrganizationRepository
 	targetRepo *repository.TargetRepository
@@ -75,10 +80,12 @@ type DrillService struct {
 	scope      *ScopeService
 }
 
+// NewDrillService 创建下钻服务。
 func NewDrillService(orgRepo *repository.OrganizationRepository, targetRepo *repository.TargetRepository, repo *repository.DrillRepository, scope *ScopeService) *DrillService {
 	return &DrillService{orgRepo: orgRepo, targetRepo: targetRepo, repo: repo, scope: scope}
 }
 
+// Query 按组织节点与模式（下级汇总 / 扁平全部 / 门店员工）执行下钻查询。
 func (s *DrillService) Query(user *model.User, orgID uint64, periodType, period, metric, mode string) (*DrillResult, error) {
 	scope, err := s.scope.Resolve(user)
 	if err != nil {

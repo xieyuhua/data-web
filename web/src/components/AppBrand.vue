@@ -1,3 +1,4 @@
+<!-- 品牌标识：内联 SVG 图标，不依赖外部图片资源，避免打包后 404 -->
 <template>
   <div class="brand-mark" aria-hidden="true">
     <svg viewBox="0 0 24 24" fill="none">

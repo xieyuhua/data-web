@@ -15,12 +15,14 @@ import (
 	"gorm.io/gorm"
 )
 
+// UserService 用户（通讯录）业务服务。
 type UserService struct {
 	repo     *repository.UserRepository
 	roleRepo *repository.RoleRepository
 	orgRepo  *repository.OrganizationRepository
 }
 
+// UserInput 用户新建 / 更新入参。
 type UserInput struct {
 	Name           string `json:"name"`
 	Username       string `json:"username"`
@@ -34,10 +36,12 @@ type UserInput struct {
 	Status         string `json:"status"`
 }
 
+// NewUserService 创建用户服务。
 func NewUserService(repo *repository.UserRepository, roleRepo *repository.RoleRepository, orgRepo *repository.OrganizationRepository) *UserService {
 	return &UserService{repo: repo, roleRepo: roleRepo, orgRepo: orgRepo}
 }
 
+// List 按数据范围查询用户。
 func (s *UserService) List(keyword, role string, scope DataScope) ([]model.User, error) {
 	var orgIDs []uint64
 	if !scope.All {
@@ -46,6 +50,7 @@ func (s *UserService) List(keyword, role string, scope DataScope) ([]model.User,
 	return s.repo.List(keyword, role, orgIDs)
 }
 
+// Create 新增用户（密码使用 bcrypt 加密）。
 func (s *UserService) Create(input UserInput) (*model.User, error) {
 	if strings.TrimSpace(input.Name) == "" || strings.TrimSpace(input.Username) == "" {
 		return nil, errors.New("姓名和用户名不能为空")
@@ -79,6 +84,7 @@ func (s *UserService) Create(input UserInput) (*model.User, error) {
 	return s.repo.FindByID(user.ID)
 }
 
+// Update 更新用户。
 func (s *UserService) Update(id uint64, input UserInput) (*model.User, error) {
 	user, err := s.repo.FindByID(id)
 	if err != nil {
@@ -122,6 +128,7 @@ func (s *UserService) Update(id uint64, input UserInput) (*model.User, error) {
 	return s.repo.FindByID(user.ID)
 }
 
+// Delete 删除用户（禁止删除当前登录账号）。
 func (s *UserService) Delete(id, currentUserID uint64) error {
 	if id == currentUserID {
 		return errors.New("不能删除当前登录账号")
@@ -129,6 +136,7 @@ func (s *UserService) Delete(id, currentUserID uint64) error {
 	return s.repo.Delete(id)
 }
 
+// UserImportResult 通讯录导入结果统计。
 type UserImportResult struct {
 	Created         int `json:"created"`
 	Updated         int `json:"updated"`
@@ -138,6 +146,7 @@ type UserImportResult struct {
 
 var userImportHeaders = []string{"姓名", "用户名", "角色编码", "组织编码", "手机", "邮箱", "企业微信UserID", "微信OpenID", "状态", "初始密码"}
 
+// Export 导出通讯录 Excel。
 func (s *UserService) Export() ([]byte, error) {
 	users, err := s.repo.List("", "", nil)
 	if err != nil {
@@ -182,6 +191,7 @@ func (s *UserService) Export() ([]byte, error) {
 	return buffer.Bytes(), nil
 }
 
+// Template 生成通讯录导入模板。
 func (s *UserService) Template() ([]byte, error) {
 	file := excelize.NewFile()
 	defer file.Close()

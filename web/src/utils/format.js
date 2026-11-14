@@ -1,22 +1,30 @@
+// 数字 / 日期 / 状态 的统一格式化工具：
+// 指标数字使用 compactValue 支持“点击在原始值与 万/亿 缩写之间切换”
+// 任意值安全转成数字，空值与非法值统一返回 0
 export function toNumber(value) {
   if (value === null || value === undefined || value === '') return 0
   const number = Number(value)
   return Number.isFinite(number) ? number : 0
 }
 
+// 按指定格式渲染指标值：number 普通数值、currency 金额、integer 整数、percent 百分比
 export function formatValue(value, format = 'number', unit = '') {
   if (value === null || value === undefined || value === '') return '—'
+  // 非数字字符串（如维度名称）原样展示，不做数值转换
   if (typeof value === 'string' && Number.isNaN(Number(value))) return value
   const number = toNumber(value)
   let text = ''
   switch (format) {
     case 'currency':
+      // 金额：千分位，最多保留 2 位小数
       text = number.toLocaleString('zh-CN', { minimumFractionDigits: 0, maximumFractionDigits: 2 })
       break
     case 'integer':
+      // 整数：四舍五入后千分位展示
       text = Math.round(number).toLocaleString('zh-CN')
       break
     case 'percent':
+      // 百分比：数值本身已是百分数，直接追加 % 号
       text = `${number.toLocaleString('zh-CN', { maximumFractionDigits: 1 })}%`
       return text
     case 'number':
@@ -26,6 +34,7 @@ export function formatValue(value, format = 'number', unit = '') {
   return unit ? `${text} ${unit}` : text
 }
 
+// 固定规则的 万 / 亿 缩写，供图表轴标签等场景使用
 export function compactNumber(value) {
   const number = toNumber(value)
   if (Math.abs(number) >= 100000000) return `${(number / 100000000).toFixed(2)}亿`
@@ -72,6 +81,7 @@ export function todayISO(offsetDays = 0) {
   return toISODate(date)
 }
 
+// 把 Date 对象格式化为 YYYY-MM-DD，供日期选择器与接口参数使用
 function toISODate(date) {
   const year = date.getFullYear()
   const month = String(date.getMonth() + 1).padStart(2, '0')
@@ -79,6 +89,7 @@ function toISODate(date) {
   return `${year}-${month}-${day}`
 }
 
+// 生成最近 N 天的日期区间 [开始日, 今天]，days = 0 表示仅当天
 export function dateRange(days) {
   if (days === 0) return [todayISO(), todayISO()]
   return [todayISO(-(days - 1)), todayISO()]
@@ -92,11 +103,13 @@ export function monthRange(offset = 0) {
   return [toISODate(start), toISODate(end)]
 }
 
+// 今年 1 月 1 日至今，用于“本年累计”等场景
 export function yearToDateRange() {
   const now = new Date()
   return [`${now.getFullYear()}-01-01`, toISODate(now)]
 }
 
+// 状态码 => 中文文案与标签样式类名，列表页统一渲染
 export function statusMeta(status) {
   const map = {
     active: { label: '启用', className: 'tag-green' },

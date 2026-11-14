@@ -1,3 +1,6 @@
+<!-- 看板授权分享弹窗：
+     生成带 token 的公开链接，链接继承分享者的数据权限范围，
+     可设置有效期与最大访问次数，分享记录在「分享管理」页统一审计 -->
 <script setup>
 import { reactive, ref, watch } from 'vue'
 import { Check, Copy, Link2, ShieldCheck } from 'lucide-vue-next'
@@ -12,6 +15,7 @@ const props = defineProps({
 })
 
 const emit = defineEmits(['update:modelValue', 'created'])
+// 表单：有效期（小时）与最大访问次数（0 表示不限制）
 const form = reactive({ expire_hours: 24, max_views: 0 })
 const loading = ref(false)
 const result = ref(null)
@@ -20,6 +24,7 @@ function close() {
   emit('update:modelValue', false)
 }
 
+// 每次打开弹窗时重置表单与上一次的生成结果
 watch(
   () => props.modelValue,
   (visible) => {
@@ -31,6 +36,7 @@ watch(
   },
 )
 
+// 调用后端创建分享链接，返回结果包含 url / expires_at / max_views
 async function createLink() {
   if (!props.dashboardId) return
   loading.value = true
@@ -49,6 +55,7 @@ async function createLink() {
   }
 }
 
+// 复制链接：优先使用剪贴板 API，不支持时回退到临时 textarea + execCommand
 async function copyLink() {
   if (!result.value?.url) return
   try {

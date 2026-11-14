@@ -18,16 +18,19 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
+// DashboardHandler 看板接口：列表、详情、增删改、数据查询与导出。
 type DashboardHandler struct {
 	service *service.DashboardService
 	repo    *repository.DashboardRepository
 	scope   *service.ScopeService
 }
 
+// NewDashboardHandler 创建看板处理器。
 func NewDashboardHandler(service *service.DashboardService, repo *repository.DashboardRepository, scope *service.ScopeService) *DashboardHandler {
 	return &DashboardHandler{service: service, repo: repo, scope: scope}
 }
 
+// List 查询当前用户可见的看板列表（按发布状态、角色、组织范围过滤）。
 func (h *DashboardHandler) List(c *gin.Context) {
 	items, err := h.service.List(c.Query("keyword"), c.Query("category"))
 	if err != nil {
@@ -51,6 +54,7 @@ func (h *DashboardHandler) List(c *gin.Context) {
 	response.OK(c, result)
 }
 
+// Get 查询看板详情，未发布或无权限时拒绝访问。
 func (h *DashboardHandler) Get(c *gin.Context) {
 	id, _ := strconv.ParseUint(c.Param("id"), 10, 64)
 	item, err := h.service.Get(id)
@@ -70,6 +74,7 @@ func (h *DashboardHandler) Get(c *gin.Context) {
 	response.OK(c, item)
 }
 
+// Create 新建看板。
 func (h *DashboardHandler) Create(c *gin.Context) {
 	var input service.DashboardInput
 	if err := c.ShouldBindJSON(&input); err != nil {
@@ -84,6 +89,7 @@ func (h *DashboardHandler) Create(c *gin.Context) {
 	response.Created(c, item)
 }
 
+// Update 更新看板；仅创建者或管理员可操作。
 func (h *DashboardHandler) Update(c *gin.Context) {
 	id, _ := strconv.ParseUint(c.Param("id"), 10, 64)
 	existing, err := h.repo.FindByID(id)
@@ -108,6 +114,7 @@ func (h *DashboardHandler) Update(c *gin.Context) {
 	response.OK(c, item)
 }
 
+// Delete 删除看板；仅创建者或管理员可操作。
 func (h *DashboardHandler) Delete(c *gin.Context) {
 	id, _ := strconv.ParseUint(c.Param("id"), 10, 64)
 	existing, err := h.repo.FindByID(id)
@@ -126,6 +133,7 @@ func (h *DashboardHandler) Delete(c *gin.Context) {
 	response.OK(c, gin.H{"deleted": true})
 }
 
+// Duplicate 复制看板为当前用户的新看板。
 func (h *DashboardHandler) Duplicate(c *gin.Context) {
 	id, _ := strconv.ParseUint(c.Param("id"), 10, 64)
 	existing, err := h.repo.FindByID(id)
@@ -145,6 +153,7 @@ func (h *DashboardHandler) Duplicate(c *gin.Context) {
 	response.Created(c, item)
 }
 
+// Data 查询看板所有组件的数据，默认最近 30 天。
 func (h *DashboardHandler) Data(c *gin.Context) {
 	id, _ := strconv.ParseUint(c.Param("id"), 10, 64)
 	_, orgIDs, ok := h.authorizedDashboard(c, id)
@@ -273,10 +282,12 @@ func (h *DashboardHandler) ToDashboard(c *gin.Context) {
 	response.Created(c, item)
 }
 
+// canManageDashboard 判断当前用户是否可维护指定看板。
 func canManageDashboard(c *gin.Context, item *model.Dashboard) bool {
 	return service.IsAdmin(middleware.CurrentRole(c)) || item.CreatedBy == middleware.CurrentUser(c).ID
 }
 
+// dateParams 解析起止日期，缺省为最近 30 天。
 func dateParams(c *gin.Context) (string, string) {
 	startDate := c.Query("start_date")
 	endDate := c.Query("end_date")
@@ -289,14 +300,17 @@ func dateParams(c *gin.Context) (string, string) {
 	return startDate, endDate
 }
 
+// TemplateHandler 看板模板接口。
 type TemplateHandler struct {
 	service *service.TemplateService
 }
 
+// NewTemplateHandler 创建模板处理器。
 func NewTemplateHandler(service *service.TemplateService) *TemplateHandler {
 	return &TemplateHandler{service: service}
 }
 
+// List 查询模板列表。
 func (h *TemplateHandler) List(c *gin.Context) {
 	items, err := h.service.List()
 	if err != nil {
@@ -306,6 +320,7 @@ func (h *TemplateHandler) List(c *gin.Context) {
 	response.OK(c, items)
 }
 
+// Create 保存当前看板为模板。
 func (h *TemplateHandler) Create(c *gin.Context) {
 	var input struct {
 		Name        string `json:"name"`
@@ -328,6 +343,7 @@ func (h *TemplateHandler) Create(c *gin.Context) {
 	response.Created(c, item)
 }
 
+// Use 使用模板创建一份新看板。
 func (h *TemplateHandler) Use(c *gin.Context) {
 	id, _ := strconv.ParseUint(c.Param("id"), 10, 64)
 	item, err := h.service.CreateDashboard(id, middleware.CurrentUser(c).ID)
@@ -338,6 +354,7 @@ func (h *TemplateHandler) Use(c *gin.Context) {
 	response.Created(c, item)
 }
 
+// Delete 删除模板。
 func (h *TemplateHandler) Delete(c *gin.Context) {
 	id, _ := strconv.ParseUint(c.Param("id"), 10, 64)
 	if err := h.service.Delete(id); err != nil {

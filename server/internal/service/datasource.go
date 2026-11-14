@@ -26,6 +26,7 @@ import (
 
 var SupportedDrivers = []string{"mysql", "postgres", "sqlserver", "oracle", "sqlite"}
 
+// DatasourceInput 数据源新建 / 更新入参。
 type DatasourceInput struct {
 	Name         string `json:"name"`
 	Code         string `json:"code"`
@@ -38,6 +39,7 @@ type DatasourceInput struct {
 	Remark       string `json:"remark"`
 }
 
+// DatasourceView 数据源对外视图（DSN 已脱敏）。
 type DatasourceView struct {
 	ID           uint64     `json:"id"`
 	Name         string     `json:"name"`
@@ -56,12 +58,14 @@ type DatasourceView struct {
 	UpdatedAt    time.Time  `json:"updated_at"`
 }
 
+// DatasourceTestResult 数据源连通性测试结果。
 type DatasourceTestResult struct {
 	OK        bool   `json:"ok"`
 	Message   string `json:"message"`
 	LatencyMS int64  `json:"latency_ms"`
 }
 
+// DatasourceService 数据源服务：负责连接池缓存、DSN 加解密与连通性测试。
 type DatasourceService struct {
 	repo    *repository.DatasourceRepository
 	box     *secretbox.Box
@@ -70,6 +74,7 @@ type DatasourceService struct {
 	timeout time.Duration
 }
 
+// NewDatasourceService 创建数据源服务，默认超时 8 秒。
 func NewDatasourceService(repo *repository.DatasourceRepository, box *secretbox.Box, timeout time.Duration) *DatasourceService {
 	if timeout <= 0 {
 		timeout = 8 * time.Second
@@ -77,6 +82,7 @@ func NewDatasourceService(repo *repository.DatasourceRepository, box *secretbox.
 	return &DatasourceService{repo: repo, box: box, pool: make(map[uint64]*gorm.DB), timeout: timeout}
 }
 
+// List 查询数据源列表（密码脱敏）。
 func (s *DatasourceService) List() ([]DatasourceView, error) {
 	items, err := s.repo.List()
 	if err != nil {
@@ -89,6 +95,7 @@ func (s *DatasourceService) List() ([]DatasourceView, error) {
 	return result, nil
 }
 
+// Create 新增数据源，加密保存 DSN。
 func (s *DatasourceService) Create(input DatasourceInput, userID uint64) (*DatasourceView, error) {
 	input.Name = strings.TrimSpace(input.Name)
 	input.Code = strings.TrimSpace(input.Code)
@@ -122,6 +129,7 @@ func (s *DatasourceService) Create(input DatasourceInput, userID uint64) (*Datas
 	return &view, nil
 }
 
+// Update 更新数据源；DSN 留空表示不修改原密码。
 func (s *DatasourceService) Update(id uint64, input DatasourceInput) (*DatasourceView, error) {
 	item, err := s.repo.FindByID(id)
 	if err != nil {
@@ -169,6 +177,7 @@ func (s *DatasourceService) Update(id uint64, input DatasourceInput) (*Datasourc
 	return &view, nil
 }
 
+// Delete 删除数据源并关闭缓存的连接池。
 func (s *DatasourceService) Delete(id uint64) error {
 	s.Invalidate(id)
 	return s.repo.Delete(id)
@@ -250,6 +259,7 @@ func (s *DatasourceService) DB(id uint64) (*gorm.DB, error) {
 	return db, nil
 }
 
+// Invalidate 关闭并移除指定数据源的缓存连接。
 func (s *DatasourceService) Invalidate(id uint64) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
@@ -270,6 +280,7 @@ func (s *DatasourceService) Driver(id uint64) (string, error) {
 	return strings.ToLower(strings.TrimSpace(item.Driver)), nil
 }
 
+// CloseAll 关闭全部缓存连接（进程退出时调用）。
 func (s *DatasourceService) CloseAll() {
 	s.mu.Lock()
 	defer s.mu.Unlock()

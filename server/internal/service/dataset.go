@@ -18,6 +18,7 @@ import (
 	"gorm.io/gorm"
 )
 
+// QueryResult 数据集查询结果：列名 + 行数据 + 耗时。
 type QueryResult struct {
 	Columns   []string `json:"columns"`
 	Rows      [][]any  `json:"rows"`
@@ -45,6 +46,7 @@ type datasetCacheItem struct {
 	expiresAt time.Time
 }
 
+// DatasetService 数据集服务：负责 SQL 校验、权限注入、执行与短时缓存。
 type DatasetService struct {
 	repo    *repository.DatasetRepository
 	sources *DatasourceService
@@ -53,12 +55,15 @@ type DatasetService struct {
 	cache   map[string]datasetCacheItem
 }
 
+// NewDatasetService 创建数据集服务。
 func NewDatasetService(repo *repository.DatasetRepository, sources *DatasourceService, timeout time.Duration) *DatasetService {
 	return &DatasetService{repo: repo, sources: sources, timeout: timeout, cache: make(map[string]datasetCacheItem)}
 }
 
+// List 查询数据集列表。
 func (s *DatasetService) List() ([]model.Dataset, error) { return s.repo.List() }
 
+// Create 新增数据集（校验必填字段与 SQL 安全性）。
 func (s *DatasetService) Create(item *model.Dataset) error {
 	if item.Name == "" || item.Code == "" || item.SQLText == "" {
 		return fmt.Errorf("数据集名称、编码和 SQL 不能为空")
@@ -79,6 +84,7 @@ func (s *DatasetService) Create(item *model.Dataset) error {
 	return s.repo.Create(item)
 }
 
+// Update 更新数据集并清理缓存。
 func (s *DatasetService) Update(item *model.Dataset) error {
 	if item.ID == 0 {
 		return fmt.Errorf("数据集 ID 不能为空")
@@ -97,6 +103,7 @@ func (s *DatasetService) Update(item *model.Dataset) error {
 	return nil
 }
 
+// Delete 删除数据集并清理相关缓存。
 func (s *DatasetService) Delete(id uint64) error {
 	if err := s.repo.Delete(id); err != nil {
 		return err
@@ -105,6 +112,7 @@ func (s *DatasetService) Delete(id uint64) error {
 	return nil
 }
 
+// Query 执行数据集查询，自动注入组织数据权限。
 func (s *DatasetService) Query(ctx context.Context, dataset *model.Dataset, orgIDs []uint64, startDate, endDate string) (*QueryResult, error) {
 	return s.QueryWithOptions(ctx, dataset, orgIDs, startDate, endDate, QueryOptions{})
 }
@@ -312,6 +320,7 @@ func (s *DatasetService) scanRows(queryCtx context.Context, db *gorm.DB, sqlText
 	return result, nil
 }
 
+// Preview 预览已保存数据集，默认最近 7 天。
 func (s *DatasetService) Preview(ctx context.Context, id uint64, orgIDs []uint64, startDate, endDate string) (*QueryResult, error) {
 	dataset, err := s.repo.FindByID(id)
 	if err != nil {

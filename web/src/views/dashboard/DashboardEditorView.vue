@@ -1,3 +1,4 @@
+<!-- 看板编辑器：栅格布局组件，配置指标、图表、筛选器与看板设置（下钻、组织范围、自动刷新）。 -->
 <script setup>
 import { computed, onMounted, reactive, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
@@ -132,6 +133,7 @@ function normalizeFilter(item = {}) {
   }
 }
 
+// 解析筛选选项文本（按行或逗号分隔）
 function parseFilterOptions(text) {
   return String(text || '')
     .split(/[\n,，;；]+/)
@@ -140,6 +142,7 @@ function parseFilterOptions(text) {
     .slice(0, 50)
 }
 
+// 新增筛选器
 function addFilter() {
   if (!Array.isArray(layout.settings.filters)) layout.settings.filters = []
   if (layout.settings.filters.length >= 8) {
@@ -149,11 +152,13 @@ function addFilter() {
   layout.settings.filters.push(normalizeFilter())
 }
 
+// 删除指定筛选器
 function removeFilter(index) {
   if (!Array.isArray(layout.settings.filters)) return
   layout.settings.filters.splice(index, 1)
 }
 
+// 组装看板设置（下钻、自动刷新、筛选器）请求体
 function buildSettingsPayload() {
   const settings = { ...layout.settings }
   const filters = (layout.settings.filters || [])
@@ -175,18 +180,22 @@ function buildSettingsPayload() {
   return settings
 }
 
+// 图表类型转中文名称
 function chartLabel(type) {
   return CHART_LABELS[type] || type
 }
 
+// 字段名转展示名称
 function fieldLabel(field) {
   return FIELD_LABELS[field] || field
 }
 
+// 图表类型对应的图标
 function chartIcon(type) {
   return COMPONENTS.find((item) => item.type === type)?.icon || Type
 }
 
+// 解析看板布局配置
 function parseLayout(value) {
   if (!value) return { settings: {}, widgets: [] }
   if (typeof value === 'string') {
@@ -199,6 +208,7 @@ function parseLayout(value) {
   return value
 }
 
+// 规范化组件结构，兼容旧版配置
 function normalizeWidget(widget) {
   widget.config = widget.config || {}
   widget.w = Number(widget.w) || 12
@@ -236,10 +246,12 @@ function normalizeWidget(widget) {
   return widget
 }
 
+// 生成组件唯一 ID
 function newId(type) {
   return `${type}_${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`
 }
 
+// 按组件类型生成默认配置
 function defaultConfig(type) {
   if (type === 'kpi') {
     return {
@@ -330,6 +342,7 @@ function defaultConfig(type) {
   return { content: '在这里填写业务说明、指标口径或分析结论。' }
 }
 
+// 向看板新增组件
 function addWidget(type) {
   const dataset = datasets.value[0]
   const widget = normalizeWidget({
@@ -349,11 +362,13 @@ function addWidget(type) {
   if (widget.dataset_id) loadFields(widget.dataset_id)
 }
 
+// 选中组件以编辑属性
 function selectWidget(widget) {
   selectedId.value = widget.id
   if (widget.dataset_id) loadFields(widget.dataset_id)
 }
 
+// 复制组件
 function duplicateWidget(widget) {
   const copy = normalizeWidget(JSON.parse(JSON.stringify(widget)))
   copy.id = newId(copy.chart_type)
@@ -363,6 +378,7 @@ function duplicateWidget(widget) {
   selectedId.value = copy.id
 }
 
+// 删除组件
 function removeWidget(widget) {
   const index = layout.widgets.findIndex((item) => item.id === widget.id)
   if (index < 0) return
@@ -372,6 +388,7 @@ function removeWidget(widget) {
   }
 }
 
+// 调整组件顺序
 function moveWidget(widget, offset) {
   const index = layout.widgets.findIndex((item) => item.id === widget.id)
   const target = index + offset
@@ -380,6 +397,7 @@ function moveWidget(widget, offset) {
   layout.widgets.splice(target, 0, item)
 }
 
+// 加载数据集字段列表
 async function loadFields(datasetId) {
   if (!datasetId) {
     previewColumns.value = []
@@ -398,11 +416,13 @@ async function loadFields(datasetId) {
   }
 }
 
+// 切换数据集后重置字段配置
 function onDatasetChange(widget, datasetId) {
   widget.dataset_id = Number(datasetId) || 0
   loadFields(widget.dataset_id)
 }
 
+// 切换组件图表类型
 function switchChartType(widget, type) {
   widget.chart_type = type
   const config = widget.config || {}
@@ -439,6 +459,7 @@ function switchChartType(widget, type) {
   widget.config = config
 }
 
+// 按字段自动生成默认图表配置
 function autoConfig(widget) {
   const columns = previewColumns.value
   if (!columns.length) {
@@ -504,10 +525,12 @@ function autoConfig(widget) {
   ElMessage.success('已按数据集字段自动填充')
 }
 
+// 新增 KPI 指标项
 function addMetric(widget) {
   widget.config.columns.push({ field: '', label: '', unit: '', format: 'number', target: '', compare: '' })
 }
 
+// 新增图表指标系列
 function addYField(widget) {
   widget.config.yFields.push({
     field: '',
@@ -518,18 +541,22 @@ function addYField(widget) {
   })
 }
 
+// 新增表格列配置
 function addTableColumn(widget) {
   widget.config.columns.push({ field: '', label: '', format: 'text', progress: false })
 }
 
+// 从数组指定位置移除一项
 function removeAt(list, index) {
   list.splice(index, 1)
 }
 
+// 计算组件高度
 function widgetHeight(widget) {
   return `${Math.max(120, Number(widget.h || 4) * 34)}px`
 }
 
+// 计算组件栅格样式
 function widgetStyle(widget) {
   return {
     gridColumn: `span ${Math.min(12, Math.max(1, Number(widget.w) || 12))}`,
@@ -537,10 +564,12 @@ function widgetStyle(widget) {
   }
 }
 
+// 返回上一页（有未保存提示）
 function goBack() {
   router.push(isEdit.value ? `/dashboards/${dashboardId.value}` : '/dashboards')
 }
 
+// 打开看板预览
 function openPreview() {
   if (!isEdit.value) {
     ElMessage.info('请先保存看板后再预览')
@@ -549,6 +578,7 @@ function openPreview() {
   window.open(`/dashboards/${dashboardId.value}`, '_blank')
 }
 
+// 加载看板详情用于编辑
 async function load() {
   loading.value = true
   try {
@@ -594,6 +624,7 @@ async function load() {
   }
 }
 
+// 保存看板（草稿 / 发布）
 async function save(status) {
   if (!meta.name.trim()) {
     ElMessage.warning('请填写看板名称')

@@ -1,3 +1,7 @@
+<!-- 后台整体布局：
+     - 桌面端左侧固定导航栏，移动端折叠为抽屉 + 底部导航（自适应）
+     - 「管理后台」菜单仅超级管理员可见
+     - 顶部展示当前账号的组织与数据权限范围，防止误判可见数据 -->
 <script setup>
 import { computed, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
@@ -13,6 +17,7 @@ import {
   Server,
   Share2,
   ShieldCheck,
+  ScrollText,
   Target,
   Users,
 } from 'lucide-vue-next'
@@ -25,6 +30,7 @@ const route = useRoute()
 const router = useRouter()
 const drawerOpen = ref(false)
 
+// 侧边导航分组：分析工作台对所有登录用户开放，管理后台仅管理员可见
 const groups = computed(() => {
   const result = [
     {
@@ -48,17 +54,20 @@ const groups = computed(() => {
         { to: '/admin/datasources', label: '数据源管理', icon: Server },
         { to: '/admin/targets', label: '经营目标', icon: Target },
         { to: '/admin/push', label: '推送中心', icon: Send },
+        { to: '/admin/audit', label: '审计日志', icon: ScrollText },
       ],
     })
   }
   return result
 })
 
+// 当前数据权限范围文案
 const scopeLabel = computed(() => dataScopeLabel(auth.dataScope))
 const roleName = computed(() => auth.role?.name || '访客')
 const pageTitle = computed(() => route.meta.title || '经营看板')
 const pageSubtitle = computed(() => route.meta.subtitle || '让每一个经营决策，都有数据依据')
 
+// 路由切换后自动关闭移动端抽屉
 watch(
   () => route.fullPath,
   () => {
@@ -66,6 +75,7 @@ watch(
   },
 )
 
+// 顶部用户下拉菜单命令处理
 function handleCommand(command) {
   if (command === 'logout') {
     auth.logout()

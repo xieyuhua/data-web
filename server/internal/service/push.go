@@ -17,12 +17,16 @@ import (
 	"gorm.io/gorm"
 )
 
+// RecipientRule 推送接收人规则：可指定用户、角色或组织。
+// RecipientRule 推送接收人规则：可指定用户、角色或组织。
 type RecipientRule struct {
 	UserIDs []uint64 `json:"user_ids"`
 	Roles   []string `json:"roles"`
 	OrgIDs  []uint64 `json:"org_ids"`
 }
 
+// SubscriptionInput 推送订阅新建 / 更新入参。
+// SubscriptionInput 推送订阅新建 / 更新入参。
 type SubscriptionInput struct {
 	Name        string        `json:"name"`
 	DashboardID uint64        `json:"dashboard_id"`
@@ -34,6 +38,8 @@ type SubscriptionInput struct {
 	Enabled     bool          `json:"enabled"`
 }
 
+// SubscriptionView 推送订阅对外视图（补充看板、模板名称）。
+// SubscriptionView 推送订阅对外视图（补充看板、模板名称）。
 type SubscriptionView struct {
 	model.Subscription
 	Channels      []string      `json:"channels"`
@@ -42,6 +48,8 @@ type SubscriptionView struct {
 	TemplateName  string        `json:"template_name"`
 }
 
+// PushTemplateInput 推送模板入参。
+// PushTemplateInput 推送模板入参。
 type PushTemplateInput struct {
 	Name            string `json:"name"`
 	Channel         string `json:"channel"`
@@ -51,6 +59,8 @@ type PushTemplateInput struct {
 	Enabled         bool   `json:"enabled"`
 }
 
+// ChannelConfigView 推送渠道配置视图。
+// ChannelConfigView 推送渠道配置视图。
 type ChannelConfigView struct {
 	Channel   string         `json:"channel"`
 	Name      string         `json:"name"`
@@ -59,6 +69,8 @@ type ChannelConfigView struct {
 	UpdatedAt time.Time      `json:"updated_at"`
 }
 
+// PushPreview 推送内容预览结果。
+// PushPreview 推送内容预览结果。
 type PushPreview struct {
 	Title   string         `json:"title"`
 	Content string         `json:"content"`
@@ -66,6 +78,8 @@ type PushPreview struct {
 	Style   map[string]any `json:"style"`
 }
 
+// SendSummary 一次推送的执行汇总。
+// SendSummary 一次推送的执行汇总。
 type SendSummary struct {
 	Total     int    `json:"total"`
 	Sent      int    `json:"sent"`
@@ -75,6 +89,8 @@ type SendSummary struct {
 	Status    string `json:"status"`
 }
 
+// PushService 推送业务服务：负责模板渲染、接收人解析、渠道发送与记录。
+// PushService 推送业务服务：负责模板渲染、接收人解析、渠道发送与记录。
 type PushService struct {
 	repo     *repository.PushRepository
 	userRepo *repository.UserRepository
@@ -86,6 +102,8 @@ type PushService struct {
 	sender   *channel.Sender
 }
 
+// NewPushService 创建推送服务。
+// NewPushService 创建推送服务。
 func NewPushService(
 	repo *repository.PushRepository,
 	userRepo *repository.UserRepository,
@@ -102,6 +120,7 @@ func NewPushService(
 	}
 }
 
+// ListSubscriptions 查询推送订阅列表。
 func (s *PushService) ListSubscriptions() ([]SubscriptionView, error) {
 	items, err := s.repo.ListSubscriptions()
 	if err != nil {
@@ -114,6 +133,7 @@ func (s *PushService) ListSubscriptions() ([]SubscriptionView, error) {
 	return result, nil
 }
 
+// CreateSubscription 新增推送订阅。
 func (s *PushService) CreateSubscription(input SubscriptionInput, userID uint64) (*SubscriptionView, error) {
 	item, err := s.subscriptionFromInput(input, 0)
 	if err != nil {
@@ -127,6 +147,7 @@ func (s *PushService) CreateSubscription(input SubscriptionInput, userID uint64)
 	return &view, nil
 }
 
+// UpdateSubscription 更新推送订阅。
 func (s *PushService) UpdateSubscription(id uint64, input SubscriptionInput) (*SubscriptionView, error) {
 	existing, err := s.repo.FindSubscription(id)
 	if err != nil {
@@ -145,6 +166,7 @@ func (s *PushService) UpdateSubscription(id uint64, input SubscriptionInput) (*S
 	return &view, nil
 }
 
+// DeleteSubscription 删除推送订阅。
 func (s *PushService) DeleteSubscription(id uint64) error { return s.repo.DeleteSubscription(id) }
 
 func (s *PushService) subscriptionFromInput(input SubscriptionInput, id uint64) (*model.Subscription, error) {
@@ -211,10 +233,12 @@ func (s *PushService) toSubscriptionView(item model.Subscription) SubscriptionVi
 	return view
 }
 
+// ListTemplates 查询推送模板列表。
 func (s *PushService) ListTemplates() ([]model.PushTemplate, error) {
 	return s.repo.ListTemplates()
 }
 
+// CreateTemplate 新增推送模板。
 func (s *PushService) CreateTemplate(input PushTemplateInput) (*model.PushTemplate, error) {
 	if input.Name == "" || input.TitleTemplate == "" || input.ContentTemplate == "" {
 		return nil, errors.New("模板名称、标题和内容不能为空")
@@ -235,6 +259,7 @@ func (s *PushService) CreateTemplate(input PushTemplateInput) (*model.PushTempla
 	return item, nil
 }
 
+// UpdateTemplate 更新推送模板。
 func (s *PushService) UpdateTemplate(id uint64, input PushTemplateInput) (*model.PushTemplate, error) {
 	item, err := s.repo.FindTemplate(id)
 	if err != nil {
@@ -258,12 +283,15 @@ func (s *PushService) UpdateTemplate(id uint64, input PushTemplateInput) (*model
 	return item, nil
 }
 
+// DeleteTemplate 删除推送模板。
 func (s *PushService) DeleteTemplate(id uint64) error { return s.repo.DeleteTemplate(id) }
 
+// ListRecords 查询推送记录。
 func (s *PushService) ListRecords(limit int) ([]model.PushRecord, error) {
 	return s.repo.ListRecords(limit)
 }
 
+// ListChannelConfigs 查询推送渠道配置。
 func (s *PushService) ListChannelConfigs() ([]ChannelConfigView, error) {
 	items, err := s.repo.ListChannelConfigs()
 	if err != nil {
@@ -281,6 +309,7 @@ func (s *PushService) ListChannelConfigs() ([]ChannelConfigView, error) {
 	return result, nil
 }
 
+// SaveChannelConfig 保存渠道配置（仅支持企业微信 / 微信）。
 func (s *PushService) SaveChannelConfig(channelName, name string, enabled bool, input map[string]any) (*ChannelConfigView, error) {
 	if channelName != "wecom" && channelName != "wechat" {
 		return nil, errors.New("不支持的推送通道")
@@ -316,6 +345,7 @@ func (s *PushService) SaveChannelConfig(channelName, name string, enabled bool, 
 	return &ChannelConfigView{Channel: channelName, Name: name, Enabled: enabled, Config: maskSecrets(input)}, nil
 }
 
+// Preview 预览推送标题与正文（使用看板数据渲染模板）。
 func (s *PushService) Preview(templateID uint64, dashboardID uint64) (*PushPreview, error) {
 	tpl, err := s.repo.FindTemplate(templateID)
 	if err != nil {
@@ -337,6 +367,7 @@ func (s *PushService) Preview(templateID uint64, dashboardID uint64) (*PushPrevi
 	return &PushPreview{Title: title, Content: content, URL: "https://example.com/share/preview", Style: style}, nil
 }
 
+// SendSubscription 执行一次订阅推送，逐人生成分享链接并发送。
 func (s *PushService) SendSubscription(ctx context.Context, subscriptionID uint64) (*SendSummary, error) {
 	subscription, err := s.repo.FindSubscription(subscriptionID)
 	if err != nil {
@@ -345,6 +376,7 @@ func (s *PushService) SendSubscription(ctx context.Context, subscriptionID uint6
 	return s.send(ctx, subscription)
 }
 
+// SendByID 供定时调度器调用的无返回值包装。
 func (s *PushService) SendByID(ctx context.Context, subscriptionID uint64) {
 	if _, err := s.SendSubscription(ctx, subscriptionID); err != nil {
 		_ = err

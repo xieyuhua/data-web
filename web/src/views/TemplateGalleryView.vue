@@ -1,3 +1,4 @@
+<!-- 模板中心：浏览内置看板模板并一键套用，也可将当前看板保存为自定义模板。 -->
 <script setup>
 import { computed, onMounted, reactive, ref } from 'vue'
 import { useRouter } from 'vue-router'
@@ -45,10 +46,12 @@ const coverBars = [
   [40, 66, 52, 80, 60, 92],
 ]
 
+// 统计模板包含的组件数量
 function widgetCount(template) {
   return template.layout?.widgets?.length || 0
 }
 
+// 加载内置模板与自定义模板列表
 async function load() {
   loading.value = true
   try {
@@ -65,6 +68,7 @@ async function load() {
   }
 }
 
+// 套用模板生成新看板
 async function useTemplate(template) {
   if (usingId.value) return
   usingId.value = template.id
@@ -79,11 +83,13 @@ async function useTemplate(template) {
   }
 }
 
+// 打开模板预览弹窗
 function openPreview(template) {
   activeTemplate.value = template
   previewVisible.value = true
 }
 
+// 删除自定义模板
 async function removeTemplate(template) {
   try {
     await ElMessageBox.confirm(`确定删除模板「${template.name}」？`, '删除模板', {
@@ -103,6 +109,7 @@ async function removeTemplate(template) {
   }
 }
 
+// 按模板结构生成组件布局
 function buildLayout() {
   const summary = datasets.value.find((item) => item.code === 'sales_summary')
   const trend = datasets.value.find((item) => item.code === 'sales_trend')
@@ -154,6 +161,7 @@ function buildLayout() {
   return { settings: { refresh_seconds: 0, show_title: true }, widgets }
 }
 
+// 打开「保存为模板」弹窗
 function openCreate() {
   form.name = ''
   form.description = ''
@@ -162,6 +170,7 @@ function openCreate() {
   dialogVisible.value = true
 }
 
+// 把当前看板保存为自定义模板
 async function createTemplate() {
   if (!form.name.trim()) {
     ElMessage.warning('请填写模板名称')

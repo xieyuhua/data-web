@@ -11,6 +11,7 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
+// ShareHandler 看板分享接口：生成 / 列表 / 撤销 / 公开访问。
 type ShareHandler struct {
 	share     *service.ShareService
 	dashboard *service.DashboardService
@@ -18,10 +19,13 @@ type ShareHandler struct {
 	drill     *service.DrillService
 }
 
+// NewShareHandler 创建分享处理器。
 func NewShareHandler(share *service.ShareService, dashboard *service.DashboardService, scope *service.ScopeService, drill *service.DrillService) *ShareHandler {
 	return &ShareHandler{share: share, dashboard: dashboard, scope: scope, drill: drill}
 }
 
+// Create 生成分享链接。
+// 组织范围在生成时固定下来，后续公开访问只能看到该范围内的数据。
 func (h *ShareHandler) Create(c *gin.Context) {
 	var input struct {
 		DashboardID uint64 `json:"dashboard_id"`
@@ -83,6 +87,7 @@ func requestBaseURL(c *gin.Context) string {
 	return scheme + "://" + host
 }
 
+// List 查询分享链接列表；非管理员只能看到自己创建的链接。
 func (h *ShareHandler) List(c *gin.Context) {
 	user := middleware.CurrentUser(c)
 	items, err := h.share.List(user.ID, service.IsAdmin(middleware.CurrentRole(c)))
@@ -93,6 +98,7 @@ func (h *ShareHandler) List(c *gin.Context) {
 	response.OK(c, items)
 }
 
+// Revoke 撤销分享链接。
 func (h *ShareHandler) Revoke(c *gin.Context) {
 	id, _ := strconv.ParseUint(c.Param("id"), 10, 64)
 	user := middleware.CurrentUser(c)
@@ -103,6 +109,7 @@ func (h *ShareHandler) Revoke(c *gin.Context) {
 	response.OK(c, gin.H{"revoked": true})
 }
 
+// Public 公开访问分享看板（无需登录），校验 Token 有效期与访问次数。
 func (h *ShareHandler) Public(c *gin.Context) {
 	token := c.Param("token")
 	link, orgIDs, err := h.share.Resolve(token)

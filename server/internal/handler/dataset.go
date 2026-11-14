@@ -12,15 +12,18 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
+// DatasetHandler 数据集（SQL 模型）管理接口。
 type DatasetHandler struct {
 	service *service.DatasetService
 	scope   *service.ScopeService
 }
 
+// NewDatasetHandler 创建数据集处理器。
 func NewDatasetHandler(service *service.DatasetService, scope *service.ScopeService) *DatasetHandler {
 	return &DatasetHandler{service: service, scope: scope}
 }
 
+// List 查询数据集列表；非管理员不返回 SQL 文本，避免泄露底层查询逻辑。
 func (h *DatasetHandler) List(c *gin.Context) {
 	items, err := h.service.List()
 	if err != nil {
@@ -35,6 +38,7 @@ func (h *DatasetHandler) List(c *gin.Context) {
 	response.OK(c, items)
 }
 
+// Create 新增数据集。
 func (h *DatasetHandler) Create(c *gin.Context) {
 	var item model.Dataset
 	if err := c.ShouldBindJSON(&item); err != nil {
@@ -49,6 +53,7 @@ func (h *DatasetHandler) Create(c *gin.Context) {
 	response.Created(c, item)
 }
 
+// Update 更新数据集。
 func (h *DatasetHandler) Update(c *gin.Context) {
 	id, _ := strconv.ParseUint(c.Param("id"), 10, 64)
 	var item model.Dataset
@@ -64,6 +69,7 @@ func (h *DatasetHandler) Update(c *gin.Context) {
 	response.OK(c, item)
 }
 
+// Delete 删除数据集。
 func (h *DatasetHandler) Delete(c *gin.Context) {
 	id, _ := strconv.ParseUint(c.Param("id"), 10, 64)
 	if err := h.service.Delete(id); err != nil {
@@ -73,6 +79,7 @@ func (h *DatasetHandler) Delete(c *gin.Context) {
 	response.OK(c, gin.H{"deleted": true})
 }
 
+// Preview 预览已保存数据集的结果，默认最近 7 天并自动注入数据权限。
 func (h *DatasetHandler) Preview(c *gin.Context) {
 	id, _ := strconv.ParseUint(c.Param("id"), 10, 64)
 	scope, err := h.scope.Resolve(middleware.CurrentUser(c))

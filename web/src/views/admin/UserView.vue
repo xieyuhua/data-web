@@ -1,3 +1,4 @@
+<!-- 用户与角色管理页：维护账号、角色与组织数据范围，支持通讯录导入导出。 -->
 <script setup>
 import { computed, onMounted, reactive, ref } from 'vue'
 import {
@@ -55,6 +56,7 @@ const activeCount = computed(() => users.value.filter((item) => item.status === 
 const wecomCount = computed(() => users.value.filter((item) => item.wecom_user_id).length)
 const wechatCount = computed(() => users.value.filter((item) => item.wechat_open_id).length)
 
+// 重置用户表单
 function resetForm() {
   editingId.value = null
   Object.assign(form, {
@@ -71,11 +73,13 @@ function resetForm() {
   })
 }
 
+// 打开新建用户弹窗
 function openCreate() {
   resetForm()
   dialogVisible.value = true
 }
 
+// 打开编辑用户弹窗
 function openEdit(row) {
   resetForm()
   editingId.value = row.id
@@ -94,6 +98,7 @@ function openEdit(row) {
   dialogVisible.value = true
 }
 
+// 加载用户列表
 async function loadUsers() {
   loading.value = true
   try {
@@ -109,6 +114,7 @@ async function loadUsers() {
   }
 }
 
+// 加载用户与角色数据
 async function load() {
   loading.value = true
   try {
@@ -126,6 +132,7 @@ async function load() {
   }
 }
 
+// 保存用户（含角色与组织数据范围）
 async function save() {
   if (!form.name.trim() || !form.username.trim()) {
     ElMessage.warning('请填写姓名和用户名')
@@ -177,6 +184,7 @@ async function save() {
   }
 }
 
+// 删除用户
 async function remove(row) {
   if (row.id === auth.user?.id) {
     ElMessage.warning('不能删除当前登录账号')
@@ -196,22 +204,27 @@ async function remove(row) {
   }
 }
 
+// 组织 ID 转组织名称
 function orgName(id) {
   return orgMap.value[id]?.name || '—'
 }
 
+// 角色码转角色名称
 function roleName(code) {
   return roleMap.value[code]?.name || code || '—'
 }
 
+// 取姓名前两个字作为头像文字
 function initials(name) {
   return (name || '用户').slice(-2)
 }
 
+// 按关键字搜索用户
 function onSearch() {
   loadUsers()
 }
 
+// 导出通讯录（Excel）
 async function exportContacts() {
   try {
     await api.download('/users/export', `通讯录-${new Date().toISOString().slice(0, 10)}.xlsx`)
@@ -221,6 +234,7 @@ async function exportContacts() {
   }
 }
 
+// 下载通讯录导入模板
 async function downloadTemplate() {
   try {
     await api.download('/users/template', '通讯录导入模板.xlsx')
@@ -229,10 +243,12 @@ async function downloadTemplate() {
   }
 }
 
+// 触发导入文件选择
 function pickImport() {
   fileInput.value?.click()
 }
 
+// 导入通讯录并展示结果
 async function onImportChange(event) {
   const file = event.target?.files?.[0]
   if (event.target) event.target.value = ''

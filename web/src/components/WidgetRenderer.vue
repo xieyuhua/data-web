@@ -1,3 +1,6 @@
+<!-- 看板组件统一渲染入口：
+     根据组件类型分发到 KPI 卡 / 表格 / 图表 / 文本说明，
+     并负责「表格 ⇄ 图表」切换、点击图表元素查看明细、联动全局筛选与图片下载 -->
 <script setup>
 import { computed, ref, watch } from 'vue'
 import { BarChart3, Download, Table2 } from 'lucide-vue-next'

@@ -11,16 +11,19 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
+// UserHandler 用户（通讯录）管理接口。
 type UserHandler struct {
 	service  *service.UserService
 	roleRepo *repository.RoleRepository
 	scope    *service.ScopeService
 }
 
+// NewUserHandler 创建用户处理器。
 func NewUserHandler(service *service.UserService, roleRepo *repository.RoleRepository, scope *service.ScopeService) *UserHandler {
 	return &UserHandler{service: service, roleRepo: roleRepo, scope: scope}
 }
 
+// List 查询用户列表；按当前用户数据范围过滤。
 func (h *UserHandler) List(c *gin.Context) {
 	scope, err := h.scope.Resolve(middleware.CurrentUser(c))
 	if err != nil {
@@ -35,6 +38,7 @@ func (h *UserHandler) List(c *gin.Context) {
 	response.OK(c, users)
 }
 
+// Create 新增用户。
 func (h *UserHandler) Create(c *gin.Context) {
 	var input service.UserInput
 	if err := c.ShouldBindJSON(&input); err != nil {
@@ -49,6 +53,7 @@ func (h *UserHandler) Create(c *gin.Context) {
 	response.Created(c, user)
 }
 
+// Update 更新用户。
 func (h *UserHandler) Update(c *gin.Context) {
 	id, _ := strconv.ParseUint(c.Param("id"), 10, 64)
 	var input service.UserInput
@@ -64,6 +69,7 @@ func (h *UserHandler) Update(c *gin.Context) {
 	response.OK(c, user)
 }
 
+// Delete 删除用户（禁止删除自己）。
 func (h *UserHandler) Delete(c *gin.Context) {
 	id, _ := strconv.ParseUint(c.Param("id"), 10, 64)
 	if err := h.service.Delete(id, middleware.CurrentUser(c).ID); err != nil {
@@ -73,6 +79,7 @@ func (h *UserHandler) Delete(c *gin.Context) {
 	response.OK(c, gin.H{"deleted": true})
 }
 
+// Roles 返回角色列表（不返回权限串）。
 func (h *UserHandler) Roles(c *gin.Context) {
 	roles, err := h.roleRepo.All()
 	if err != nil {
@@ -85,6 +92,7 @@ func (h *UserHandler) Roles(c *gin.Context) {
 	response.OK(c, roles)
 }
 
+// Export 导出通讯录 Excel。
 func (h *UserHandler) Export(c *gin.Context) {
 	data, err := h.service.Export()
 	if err != nil {
@@ -94,6 +102,7 @@ func (h *UserHandler) Export(c *gin.Context) {
 	writeExcel(c, data, "contacts.xlsx")
 }
 
+// Template 下载通讯录导入模板。
 func (h *UserHandler) Template(c *gin.Context) {
 	data, err := h.service.Template()
 	if err != nil {
@@ -103,6 +112,7 @@ func (h *UserHandler) Template(c *gin.Context) {
 	writeExcel(c, data, "contacts-template.xlsx")
 }
 
+// Import 导入通讯录 Excel。
 func (h *UserHandler) Import(c *gin.Context) {
 	file, err := c.FormFile("file")
 	if err != nil {

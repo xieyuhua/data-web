@@ -1,8 +1,9 @@
+<!-- 数据模型管理页：维护受控 SQL 数据集，支持 SQL 预览直接出结果、字段识别、预览图表与一键生成看板。 -->
 <script setup>
 import { computed, nextTick, onBeforeUnmount, onMounted, reactive, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { BarChart3, Database, Eye, Pencil, Play, Plus, Search, ShieldCheck, Trash2 } from 'lucide-vue-next'
-import * as echarts from 'echarts'
+import echarts from '../../utils/echarts'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { api, getErrorMessage } from '../../api/client'
 import { dateRange, formatDate, formatValue } from '../../utils/format'
@@ -89,6 +90,7 @@ WHERE stat_date BETWEEN {{start_date}} AND {{end_date}}
 GROUP BY org_id
 ORDER BY revenue DESC`
 
+// 重置数据集表单
 function resetForm() {
   editingId.value = null
   Object.assign(form, {
@@ -103,6 +105,7 @@ function resetForm() {
   })
 }
 
+// 重置 SQL 预览状态与结果
 function resetSqlPreview() {
   sqlPreview.dates = dateRange(7)
   sqlPreview.loading = false
@@ -114,6 +117,7 @@ function resetSqlPreview() {
   disposeSqlPreviewChart()
 }
 
+// 销毁预览图表实例，释放资源
 function disposeSqlPreviewChart() {
   if (sqlPreviewChart) {
     sqlPreviewChart.dispose()
@@ -121,6 +125,7 @@ function disposeSqlPreviewChart() {
   }
 }
 
+// 执行 SQL 预览查询，直接查看数据效果
 async function runSqlPreview() {
   if (!form.sql_text.trim()) {
     ElMessage.warning('请先填写 SQL 查询')
@@ -161,6 +166,7 @@ const sqlPreviewColumns = computed(() => sqlPreview.data?.columns || [])
 const sqlPreviewRows = computed(() => sqlPreview.data?.rows || [])
 const sqlPreviewFieldInfo = computed(() => inferSqlPreviewFields())
 
+// 判断单元格是否为数值类型
 function isNumericCell(value) {
   return typeof value === 'number' && Number.isFinite(value)
 }
@@ -199,6 +205,7 @@ function inferSqlPreviewFields() {
   }
 }
 
+// 把推断出的字段同步到字段配置
 function syncSqlPreviewFields() {
   const fields = inferSqlPreviewFields()
   sqlPreview.dimensionIndex = fields.dimensionIndex
@@ -211,6 +218,7 @@ function syncSqlPreviewFields() {
   return false
 }
 
+// 渲染 SQL 预览图表
 function renderSqlPreviewChart() {
   if (sqlPreview.view === 'table' || !sqlPreviewEl.value || !sqlPreviewRows.value.length) {
     disposeSqlPreviewChart()
@@ -314,21 +322,25 @@ function renderSqlPreviewChart() {
   sqlPreviewChart.resize()
 }
 
+// 切换预览视图（表格 / 图表）
 function switchSqlPreviewView(view) {
   sqlPreview.view = view
   nextTick(renderSqlPreviewChart)
 }
 
+// 切换预览图表的展示字段
 function changeSqlPreviewField() {
   nextTick(renderSqlPreviewChart)
 }
 
+// 打开新建数据集弹窗
 function openCreate() {
   resetForm()
   resetSqlPreview()
   dialogVisible.value = true
 }
 
+// 打开编辑数据集弹窗
 function openEdit(row) {
   resetForm()
   resetSqlPreview()
@@ -346,6 +358,7 @@ function openEdit(row) {
   dialogVisible.value = true
 }
 
+// 加载数据集列表
 async function load() {
   loading.value = true
   try {
@@ -362,6 +375,7 @@ async function load() {
   }
 }
 
+// 保存数据集（SQL 会经过安全校验）
 async function save() {
   if (!form.name.trim() || !form.code.trim()) {
     ElMessage.warning('请填写数据集名称和编码')
@@ -403,6 +417,7 @@ async function save() {
   }
 }
 
+// 删除数据集
 async function remove(row) {
   try {
     await ElMessageBox.confirm(
@@ -418,6 +433,7 @@ async function remove(row) {
   }
 }
 
+// 打开数据集数据预览
 function openPreview(row) {
   previewDataset.value = row
   previewDates.value = dateRange(7)
@@ -427,6 +443,7 @@ function openPreview(row) {
   loadPreview()
 }
 
+// 加载数据集预览数据
 async function loadPreview() {
   if (!previewDataset.value) return
   if (!previewDates.value?.[0]) {
@@ -451,17 +468,20 @@ async function loadPreview() {
   }
 }
 
+// 单元格值转文本，空值显示占位符
 function cellText(value) {
   if (value === null || value === undefined || value === '') return '—'
   if (typeof value === 'number') return formatValue(value, 'number')
   return String(value)
 }
 
+// 数据源 ID 转名称
 function datasourceLabel(id) {
   if (!id) return '平台主库'
   return datasourceMap.value[id]?.name || `数据源 #${id}`
 }
 
+// 查看使用该数据集生成的看板
 async function openDashboard(row) {
   dashboardDataset.value = row
   dashboardFields.value = []
@@ -490,6 +510,7 @@ async function openDashboard(row) {
   }
 }
 
+// 基于当前数据集一键生成看板
 async function createDashboard() {
   if (!dashboardDataset.value) return
   if (!dashboardForm.name.trim()) {

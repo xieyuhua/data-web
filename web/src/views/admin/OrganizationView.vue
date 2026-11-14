@@ -1,3 +1,4 @@
+<!-- 组织架构管理页：维护集团/大区/区域/门店层级，支持手工维护、Excel 导入导出通讯录与企业微信异步同步。 -->
 <script setup>
 import { computed, onMounted, reactive, ref } from 'vue'
 import {
@@ -20,6 +21,7 @@ import { api, getErrorMessage } from '../../api/client'
 import { flattenOrgs, ORG_TYPES, orgTypeLabel } from '../../utils/org'
 import EmptyBlock from '../../components/EmptyBlock.vue'
 import OrgTreeSelect from '../../components/OrgTreeSelect.vue'
+import WecomSyncPanel from '../../components/WecomSyncPanel.vue'
 
 const tree = ref([])
 const loading = ref(true)
@@ -85,6 +87,7 @@ const childType = {
   store: 'store',
 }
 
+// 重置组织表单
 function resetForm() {
   editingId.value = null
   Object.assign(form, {
@@ -100,6 +103,7 @@ function resetForm() {
   })
 }
 
+// 打开新建组织弹窗（可指定上级组织）
 function openCreate(parent = null) {
   resetForm()
   if (parent) {
@@ -110,6 +114,7 @@ function openCreate(parent = null) {
   dialogVisible.value = true
 }
 
+// 打开编辑组织弹窗
 function openEdit(row) {
   resetForm()
   editingId.value = row.id
@@ -127,6 +132,7 @@ function openEdit(row) {
   dialogVisible.value = true
 }
 
+// 按组织类型返回对应图标
 function iconFor(type) {
   if (type === 'big_region') return Landmark
   if (type === 'region') return MapPin
@@ -134,6 +140,7 @@ function iconFor(type) {
   return Building2
 }
 
+// 加载组织树
 async function load() {
   loading.value = true
   try {
@@ -145,6 +152,7 @@ async function load() {
   }
 }
 
+// 保存组织节点
 async function save() {
   if (!form.name.trim()) {
     ElMessage.warning('请填写组织名称')
@@ -183,6 +191,7 @@ async function save() {
   }
 }
 
+// 删除组织节点
 async function remove(row) {
   try {
     await ElMessageBox.confirm(
@@ -198,6 +207,7 @@ async function remove(row) {
   }
 }
 
+// 导出组织通讯录（Excel）
 async function exportOrgs() {
   exporting.value = true
   try {
@@ -210,10 +220,12 @@ async function exportOrgs() {
   }
 }
 
+// 触发文件选择框
 function pickFile() {
   fileInput.value?.click()
 }
 
+// 上传并导入组织通讯录
 async function handleFile(event) {
   const file = event.target.files?.[0]
   event.target.value = ''
@@ -271,6 +283,8 @@ onMounted(load)
               <span class="tag">{{ flat.length }} 个节点</span>
             </div>
             <div class="inline-actions">
+              <!-- 企业微信异步同步入口，完成后自动刷新组织树 -->
+              <WecomSyncPanel @synced="load" />
               <button class="btn btn-secondary btn-sm" type="button" :disabled="exporting" @click="exportOrgs">
                 <Download :size="14" /> {{ exporting ? '导出中…' : '导出 Excel' }}
               </button>
@@ -367,6 +381,14 @@ onMounted(load)
       </div>
 
       <aside class="admin-aside">
+        <div class="scope-card">
+          <h3><ShieldCheck :size="13" style="vertical-align: -2px" /> 企业微信通讯录同步</h3>
+          <p>
+            配置 CorpID、AgentID 与 Secret 后，可异步拉取企业微信部门与成员，按层级映射为集团、大区、区域与门店，
+            并按企业微信 UserID 幂等更新平台账号。同步任务支持实时查看进度、新增/更新/失败明细与历史记录。
+          </p>
+          <p style="margin-top: 8px">手工 Excel 导入导出仍然可用，两种方式可以并行维护。</p>
+        </div>
         <div class="scope-card">
           <h3><FileSpreadsheet :size="13" style="vertical-align: -2px" /> Excel 导入</h3>
           <p>
