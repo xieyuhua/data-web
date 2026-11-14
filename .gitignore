@@ -1,0 +1,23 @@
+# dependencies
+web/node_modules/
+
+# build output
+web/dist/
+server/bin/
+
+# runtime data
+server/data/*.db
+server/data/*.db-wal
+server/data/*.db-shm
+server/data/*.log
+server/data/*.pid
+
+# env
+.env
+server/.env
+
+# editor / os
+.idea/
+.vscode/
+.DS_Store
+Thumbs.db

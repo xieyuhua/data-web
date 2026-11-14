@@ -1,0 +1,41 @@
+services:
+  bi:
+    build: .
+    container_name: qingheng-bi
+    ports:
+      - "8486:8486"
+    environment:
+      PORT: "8486"
+      DB_DRIVER: sqlite
+      DB_DSN: data/bi.db
+      JWT_SECRET: ${JWT_SECRET:-change-me-in-production-bi-platform-2026}
+      WEB_BASE_URL: ${WEB_BASE_URL:-http://localhost:8486}
+      CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:8486}
+      APP_TIMEZONE: Asia/Shanghai
+      AUTO_MIGRATE: "true"
+      SEED_DEMO_DATA: "${SEED_DEMO_DATA:-true}"
+      ALLOW_MOCK_PUSH: "${ALLOW_MOCK_PUSH:-true}"
+    volumes:
+      - ./server/data:/app/server/data
+    restart: unless-stopped
+
+  # 可选：MySQL 模式。使用时将上方 DB_DRIVER 改为 mysql，DB_DSN 指向 mysql 服务
+  # docker compose --profile mysql up -d
+  mysql:
+    image: mysql:8.4
+    profiles: ["mysql"]
+    container_name: qingheng-bi-mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-root_password}
+      MYSQL_DATABASE: bi_platform
+      MYSQL_USER: bi
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:-bi_password}
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql-data:/var/lib/mysql
+    command: ["--character-set-server=utf8mb4", "--collation-server=utf8mb4_unicode_ci"]
+    restart: unless-stopped
+
+volumes:
+  mysql-data:
