@@ -7,6 +7,7 @@ import 'element-plus/dist/index.css'
 import './assets/styles.css'
 import App from './App.vue'
 import router from './router'
+import { installTableDragPan } from './utils/tableDrag'
 
 const app = createApp(App)
 // 状态管理：登录用户、角色、权限、数据范围等全局状态
@@ -16,3 +17,5 @@ app.use(router)
 // UI 组件库全局注册，统一使用简体中文文案
 app.use(ElementPlus, { locale: zhCn })
 app.mount('#app')
+// 全站列表支持横向拖动查看（Element Plus 表格 + 原生数据表格）
+installTableDragPan()

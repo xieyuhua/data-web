@@ -4301,3 +4301,34 @@ p {
     grid-template-columns: 1fr;
   }
 }
+
+/* ===== 列表横向拖动 =====
+   1. 有横向溢出的表格 / 数据列表显示 grab 手势，按住即可左右拖动；
+   2. 拖动中全局切换 grabbing 并禁用文字选中，避免把单元格文字拖成选区；
+   3. Element Plus 表格的横向滚动条常驻，提示「这里可以左右拖动」。 */
+.is-pannable {
+  cursor: grab;
+}
+
+.is-pannable.is-panning {
+  cursor: grabbing;
+}
+
+body.is-panning-table,
+body.is-panning-table * {
+  cursor: grabbing !important;
+  user-select: none !important;
+}
+
+.el-table .el-scrollbar__bar.is-horizontal {
+  height: 8px;
+  opacity: 1;
+}
+
+.el-table .el-scrollbar__bar.is-horizontal .el-scrollbar__thumb {
+  background: rgba(26, 90, 68, 0.26);
+}
+
+.el-table .el-scrollbar__bar.is-horizontal:hover .el-scrollbar__thumb {
+  background: rgba(26, 90, 68, 0.45);
+}

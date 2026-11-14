@@ -2,7 +2,7 @@
      左侧组织树选中某个部门/门店后，右侧展示该部门下的成员列表（企业微信通讯录交互）。
      支持「包含下级部门」开关、成员搜索/角色筛选、新增/编辑/删除成员，以及通讯录模板下载、导入与导出。 -->
 <script setup>
-import { computed, onBeforeUnmount, onMounted, reactive, ref, watch } from 'vue'
+import { computed, reactive, ref, watch } from 'vue'
 import {
   ChevronRight,
   Download,
@@ -32,13 +32,6 @@ const props = defineProps({
   totalCount: { type: Number, default: 0 },
 })
 
-// 窄屏（手机）下隐藏次要列，避免表格横向滚动
-const isNarrow = ref(typeof window !== 'undefined' && window.innerWidth < 700)
-function syncNarrow() {
-  isNarrow.value = window.innerWidth < 700
-}
-onMounted(() => window.addEventListener('resize', syncNarrow))
-onBeforeUnmount(() => window.removeEventListener('resize', syncNarrow))
 
 // changed：成员增删改或导入后通知父级刷新人数统计
 const emit = defineEmits(['changed'])
@@ -377,13 +370,13 @@ loadUsers()
             <span class="tag tag-green">{{ roleName(row.role_code) }}</span>
           </template>
         </el-table-column>
-        <el-table-column v-if="!isNarrow" label="所属组织" min-width="124">
+        <el-table-column label="所属组织" min-width="124">
           <template #default="{ row }">
             <span>{{ orgName(row.organization_id) }}</span>
             <span class="mono member-org-code">{{ orgMap[row.organization_id]?.code || '' }}</span>
           </template>
         </el-table-column>
-        <el-table-column v-if="!isNarrow" label="联系方式" min-width="132">
+        <el-table-column label="联系方式" min-width="132">
           <template #default="{ row }">
             <div class="member-contact">
               <span>{{ row.phone || '—' }}</span>
@@ -391,7 +384,7 @@ loadUsers()
             </div>
           </template>
         </el-table-column>
-        <el-table-column v-if="!isNarrow" label="最近登录" width="124">
+        <el-table-column label="最近登录" width="124">
           <template #default="{ row }">
             <span class="member-login">{{ row.last_login_at ? formatDate(row.last_login_at, true) : '从未登录' }}</span>
           </template>
