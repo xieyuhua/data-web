@@ -57,6 +57,24 @@ func (r *UserRepository) List(keyword, roleCode string, orgIDs []uint64) ([]mode
 	return users, err
 }
 
+// OrgMemberCount 单个组织的直属成员数（用于组织树人数角标）。
+type OrgMemberCount struct {
+	OrgID  uint64 `gorm:"column:org_id"`
+	Total  int64  `gorm:"column:total"`
+	Active int64  `gorm:"column:active"`
+}
+
+// CountByOrg 按组织统计直属成员数与启用成员数。
+func (r *UserRepository) CountByOrg() ([]OrgMemberCount, error) {
+	var rows []OrgMemberCount
+	// 一次分组聚合拿到全部组织的直属人数，避免逐个组织查询
+	err := r.db.Model(&model.User{}).
+		Select("organization_id AS org_id, COUNT(*) AS total, SUM(CASE WHEN status = 'active' THEN 1 ELSE 0 END) AS active").
+		Group("organization_id").
+		Scan(&rows).Error
+	return rows, err
+}
+
 // Create 新增用户。
 func (r *UserRepository) Create(user *model.User) error { return r.db.Create(user).Error }
 

@@ -29,7 +29,7 @@
 - **数据源管理**：后台维护多个 MySQL / PostgreSQL / Oracle / SQL Server / SQLite 连接，DSN 使用 AES-GCM 加密存储，支持连接测试与只读标记。
 - **经营目标**：按月 / 季 / 年维护组织目标，支持 Excel 模板导入导出，看板与下钻视图实时计算达成率。
 - **模板中心**：沉淀看板结构，一键按当前用户权限生成新看板。
-- **组织架构**：树形维护 + Excel 导入 / 导出；支持集团、大区、区域、门店四级。
+- **组织架构**：参考企业微信通讯录的「左部门树 + 右成员列表」交互，左侧树展示集团 / 大区 / 区域 / 门店四级与实时人数角标，点击部门即可查看成员；支持组织与成员的增删改、通讯录 Excel 导入导出、企业微信异步同步（含进度）。
 - **用户与角色**：角色绑定数据范围与权限点；用户绑定组织；通讯录支持 Excel 模板导入与导出。
 - **授权分享**：分享链接带数据范围快照、有效期、最大访问次数、撤销；公共页无需登录。
 - **定时推送**：Cron 调度；企业微信文本 / 文本卡片 / 机器人 Webhook；微信公众号模板消息；推送模板样式后台可配；每个接收人按自身数据范围生成独立授权链接。
@@ -503,6 +503,7 @@ DB_DSN=bi:bi_password@tcp(127.0.0.1:3306)/bi_platform?charset=utf8mb4&parseTime=
 POST /api/v1/auth/login
 GET  /api/v1/auth/me
 GET  /api/v1/orgs/tree
+GET  /api/v1/orgs/member-stats
 GET  /api/v1/roles
 GET  /api/v1/drill?period_type=&period=&metric=&mode=&org_id=
 ```
@@ -510,7 +511,8 @@ GET  /api/v1/drill?period_type=&period=&metric=&mode=&org_id=
 ### 用户（管理员）
 
 ```http
-GET    /api/v1/users
+# org_id + include_children=1/0 可按部门（含/不含下级）筛选成员，并与数据范围求交
+GET    /api/v1/users?keyword=&role=&org_id=&include_children=
 POST   /api/v1/users
 PUT    /api/v1/users/:id
 DELETE /api/v1/users/:id

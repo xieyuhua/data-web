@@ -30,12 +30,30 @@ func (h *UserHandler) List(c *gin.Context) {
 		response.ServerError(c, err)
 		return
 	}
-	users, err := h.service.List(c.Query("keyword"), c.Query("role"), scope)
+	// org_id 用于组织架构页“点击部门看成员”；include_children 控制是否包含下级部门
+	orgID, _ := strconv.ParseUint(c.Query("org_id"), 10, 64)
+	includeChildren := c.Query("include_children") != "0" && c.Query("include_children") != "false"
+	users, err := h.service.List(c.Query("keyword"), c.Query("role"), scope, orgID, includeChildren)
 	if err != nil {
 		response.ServerError(c, err)
 		return
 	}
 	response.OK(c, users)
+}
+
+// OrgStats 返回各组织人数统计，供组织树人数角标使用。
+func (h *UserHandler) OrgStats(c *gin.Context) {
+	scope, err := h.scope.Resolve(middleware.CurrentUser(c))
+	if err != nil {
+		response.ServerError(c, err)
+		return
+	}
+	stats, err := h.service.MemberStats(scope)
+	if err != nil {
+		response.ServerError(c, err)
+		return
+	}
+	response.OK(c, stats)
 }
 
 // Create 新增用户。

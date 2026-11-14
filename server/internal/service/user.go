@@ -42,12 +42,117 @@ func NewUserService(repo *repository.UserRepository, roleRepo *repository.RoleRe
 }
 
 // List 按数据范围查询用户。
-func (s *UserService) List(keyword, role string, scope DataScope) ([]model.User, error) {
-	var orgIDs []uint64
+// orgID 大于 0 时只返回该组织下的成员；includeChildren 为 true 时包含全部下级组织。
+// 最终组织范围始终与当前账号的数据权限求交集，防止通过前端参数越权查看通讯录。
+func (s *UserService) List(keyword, role string, scope DataScope, orgID uint64, includeChildren bool) ([]model.User, error) {
+	var orgIDs []uint64 // nil 表示不限组织
 	if !scope.All {
 		orgIDs = scope.OrgIDs
 	}
+	if orgID > 0 {
+		// 选中部门：默认只查自身，勾选“包含下级”则展开整棵子树
+		targets := []uint64{orgID}
+		if includeChildren {
+			ids, err := s.orgRepo.DescendantIDs(orgID)
+			if err != nil {
+				return nil, err
+			}
+			targets = ids
+		}
+		if orgIDs == nil {
+			orgIDs = targets
+		} else {
+			orgIDs = intersectIDs(orgIDs, targets)
+		}
+	}
 	return s.repo.List(keyword, role, orgIDs)
+}
+
+// intersectIDs 求两个 ID 集合的交集，保持 base 的相对顺序。
+func intersectIDs(base, other []uint64) []uint64 {
+	if len(base) == 0 || len(other) == 0 {
+		return []uint64{}
+	}
+	allow := make(map[uint64]bool, len(other))
+	for _, id := range other {
+		allow[id] = true
+	}
+	result := make([]uint64, 0, len(base))
+	for _, id := range base {
+		if allow[id] {
+			result = append(result, id)
+		}
+	}
+	return result
+}
+
+// OrgMemberStat 组织成员统计：直属人数、含下级总人数、直属启用人数。
+type OrgMemberStat struct {
+	OrgID  uint64 `json:"org_id"`
+	Direct int64  `json:"direct"`
+	Total  int64  `json:"total"`
+	Active int64  `json:"active"`
+}
+
+// MemberStats 统计各组织人数，用于组织树的人数角标；只返回当前数据范围内的组织。
+func (s *UserService) MemberStats(scope DataScope) ([]OrgMemberStat, error) {
+	orgs, err := s.orgRepo.All()
+	if err != nil {
+		return nil, err
+	}
+	rows, err := s.repo.CountByOrg()
+	if err != nil {
+		return nil, err
+	}
+
+	// 直属人数与直属启用人数
+	direct := make(map[uint64]int64, len(rows))
+	active := make(map[uint64]int64, len(rows))
+	for _, row := range rows {
+		direct[row.OrgID] = row.Total
+		active[row.OrgID] = row.Active
+	}
+
+	parentOf := make(map[uint64]uint64, len(orgs))
+	for _, org := range orgs {
+		if org.ParentID != nil && *org.ParentID > 0 {
+			parentOf[org.ID] = *org.ParentID
+		}
+	}
+
+	// 把直属人数逐级累加到祖先节点，得到“含下级”人数
+	total := make(map[uint64]int64, len(orgs))
+	for orgID, count := range direct {
+		current := orgID
+		for i := 0; i < 32; i++ { // 层级上限保护，避免脏数据形成环导致死循环
+			total[current] += count
+			parent, ok := parentOf[current]
+			if !ok || parent == 0 {
+				break
+			}
+			current = parent
+		}
+	}
+
+	allowed := make(map[uint64]bool, len(scope.OrgIDs))
+	if !scope.All {
+		for _, id := range scope.OrgIDs {
+			allowed[id] = true
+		}
+	}
+	stats := make([]OrgMemberStat, 0, len(orgs))
+	for _, org := range orgs {
+		if !scope.All && !allowed[org.ID] {
+			continue
+		}
+		stats = append(stats, OrgMemberStat{
+			OrgID:  org.ID,
+			Direct: direct[org.ID],
+			Total:  total[org.ID],
+			Active: active[org.ID],
+		})
+	}
+	return stats, nil
 }
 
 // Create 新增用户（密码使用 bcrypt 加密）。

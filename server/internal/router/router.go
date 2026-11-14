@@ -80,6 +80,7 @@ func New(deps Dependencies) *gin.Engine {
 		// 当前用户信息、组织树、角色列表
 		secured.GET("/auth/me", deps.Auth.Me)
 		secured.GET("/orgs/tree", deps.Org.Tree)
+		secured.GET("/orgs/member-stats", deps.User.OrgStats)
 		secured.GET("/roles", deps.User.Roles)
 
 		// 企业微信账号绑定
