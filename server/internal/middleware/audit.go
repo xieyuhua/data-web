@@ -73,6 +73,10 @@ func Audit(repo *repository.AuditRepository) gin.HandlerFunc {
 
 // shouldAudit 写操作全量记录；读取只记录登录、导出与分享访问，避免日志被浏览行为淹没。
 func shouldAudit(c *gin.Context) bool {
+	// 看板浏览上报属于高频只读行为，不写入审计日志，避免淹没真正的变更记录
+	if strings.HasSuffix(c.Request.URL.Path, "/view") && strings.Contains(c.Request.URL.Path, "/dashboard-prefs/") {
+		return false
+	}
 	switch c.Request.Method {
 	case http.MethodPost, http.MethodPut, http.MethodPatch, http.MethodDelete:
 		return true

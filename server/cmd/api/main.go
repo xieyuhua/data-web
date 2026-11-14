@@ -55,6 +55,7 @@ func main() {
 	orgRepo := repository.NewOrganizationRepository(db)
 	datasetRepo := repository.NewDatasetRepository(db)
 	dashboardRepo := repository.NewDashboardRepository(db)
+	dashboardPrefRepo := repository.NewDashboardPreferenceRepository(db)
 	templateRepo := repository.NewTemplateRepository(db)
 	pushRepo := repository.NewPushRepository(db)
 	shareRepo := repository.NewShareRepository(db)
@@ -86,6 +87,7 @@ func main() {
 	defer datasourceService.CloseAll()
 	datasetService := service.NewDatasetService(datasetRepo, datasourceService, cfg.SQLQueryTimeout)
 	dashboardService := service.NewDashboardService(dashboardRepo, datasetRepo, datasetService)
+	dashboardPrefService := service.NewDashboardPreferenceService(dashboardPrefRepo, dashboardRepo)
 	templateService := service.NewTemplateService(templateRepo, dashboardRepo)
 	shareService := service.NewShareService(shareRepo, dashboardRepo, cfg)
 	sender := channel.NewSender(cfg.AllowMockPush)
@@ -98,7 +100,8 @@ func main() {
 	orgHandler := handler.NewOrganizationHandler(orgService, scopeService)
 	userHandler := handler.NewUserHandler(userService, roleRepo, scopeService)
 	datasetHandler := handler.NewDatasetHandler(datasetService, scopeService)
-	dashboardHandler := handler.NewDashboardHandler(dashboardService, dashboardRepo, scopeService)
+	dashboardHandler := handler.NewDashboardHandler(dashboardService, dashboardRepo, scopeService, dashboardPrefService)
+	dashboardPrefHandler := handler.NewDashboardPreferenceHandler(dashboardPrefService)
 	templateHandler := handler.NewTemplateHandler(templateService)
 	shareHandler := handler.NewShareHandler(shareService, dashboardService, scopeService, drillService)
 	pushHandler := handler.NewPushHandler(pushService)
@@ -119,7 +122,7 @@ func main() {
 	engine := router.New(router.Dependencies{
 		Config: cfg, JWT: jwtManager, UserRepo: userRepo, RoleRepo: roleRepo, AuditRepo: auditRepo,
 		Auth: authHandler, Org: orgHandler, User: userHandler, Dataset: datasetHandler,
-		Dashboard: dashboardHandler, Template: templateHandler, Share: shareHandler,
+		Dashboard: dashboardHandler, Pref: dashboardPrefHandler, Template: templateHandler, Share: shareHandler,
 		Push: pushHandler, Audit: auditHandler, Target: targetHandler,
 		Datasource: datasourceHandler, Drill: drillHandler,
 		Wecom: wecomHandler, Auth2: wecomAuthHandler,

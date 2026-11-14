@@ -73,6 +73,12 @@ type DashboardView struct {
 	PublishedAt    *time.Time      `json:"published_at"`
 	CreatedAt      time.Time       `json:"created_at"`
 	UpdatedAt      time.Time       `json:"updated_at"`
+	// 个人偏好字段：由 DashboardPreferenceService 在列表 / 详情接口合并，
+	// 仅代表当前登录人的收藏、置顶与最近浏览情况。
+	Favorite     bool       `json:"favorite"`
+	Pinned       bool       `json:"pinned"`
+	ViewCount    int        `json:"view_count"`
+	LastViewedAt *time.Time `json:"last_viewed_at"`
 }
 
 // DashboardInput 新建 / 更新看板的入参。

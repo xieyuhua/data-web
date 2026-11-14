@@ -12,12 +12,14 @@ import {
   LayoutDashboard,
   Maximize2,
   Minimize2,
+  Pin,
   Pencil,
   Printer,
   RefreshCw,
   Share2,
   ShieldCheck,
   GitBranch,
+  Star,
   Trash2,
 } from 'lucide-vue-next'
 import { ElMessage, ElMessageBox } from 'element-plus'
@@ -51,6 +53,8 @@ const activeTab = ref('dashboard')
 const pageRef = ref(null)
 const exporting = ref(false)
 const filterValues = ref({})
+// 当前用户对该看板的个人偏好（收藏 / 置顶）
+const pref = ref({ favorite: false, pinned: false })
 let refreshTimer = null
 let filterTimer = null
 
@@ -239,8 +243,11 @@ async function load() {
   try {
     const detail = await api.get(`/dashboards/${dashboardId.value}`)
     dashboard.value = detail
+    pref.value = { favorite: Boolean(detail.favorite), pinned: Boolean(detail.pinned) }
     layout.value = parseLayout(detail.layout)
     syncFilterDefaults()
+    // 记录一次浏览（用于首页"最近浏览"排序）；失败不影响看板展示
+    api.post(`/dashboard-prefs/${dashboardId.value}/view`).catch(() => {})
     await loadData()
     setupRefresh()
   } catch (err) {
@@ -267,6 +274,23 @@ async function loadData(silent = false) {
     if (!silent) ElMessage.error(getErrorMessage(err))
   } finally {
     refreshing.value = false
+  }
+}
+
+// 切换收藏 / 置顶，与首页保持同一套偏好数据
+async function togglePref(field) {
+  if (!dashboardId.value) return
+  const next = !pref.value[field]
+  try {
+    const result = await api.put(`/dashboard-prefs/${dashboardId.value}`, { [field]: next })
+    pref.value = { favorite: result.favorite, pinned: result.pinned }
+    ElMessage.success(
+      field === 'favorite'
+        ? next ? '已加入我的收藏' : '已取消收藏'
+        : next ? '已置顶该看板' : '已取消置顶',
+    )
+  } catch (err) {
+    ElMessage.error(getErrorMessage(err))
   }
 }
 
@@ -493,6 +517,25 @@ onBeforeUnmount(() => {
             <Minimize2 v-if="isFullscreen" :size="15" />
             <Maximize2 v-else :size="15" />
           </button>
+          <!-- 个人偏好：收藏 / 置顶，仅影响当前账号首页的排序与分组 -->
+          <button
+            class="icon-btn"
+            :class="{ 'pref-on': pref.favorite }"
+            type="button"
+            :title="pref.favorite ? '取消收藏' : '收藏看板'"
+            @click="togglePref('favorite')"
+          >
+            <Star :size="15" />
+          </button>
+          <button
+            class="icon-btn pin-btn"
+            :class="{ 'pin-on': pref.pinned }"
+            type="button"
+            :title="pref.pinned ? '取消置顶' : '置顶看板'"
+            @click="togglePref('pinned')"
+          >
+            <Pin :size="15" />
+          </button>
           <button v-if="canShare" class="btn btn-secondary btn-sm" type="button" @click="shareVisible = true">
             <Share2 :size="14" /> 分享
           </button>
@@ -601,6 +644,9 @@ onBeforeUnmount(() => {
 .view-tabs button { border: 0; background: transparent; color: var(--muted); font-size: 11px; display: inline-flex; align-items: center; gap: 6px; padding: 7px 14px; border-radius: 8px; cursor: pointer; transition: all .16s ease; }
 .view-tabs button:hover { color: var(--emerald-deep); }
 .view-tabs button.active { background: #fff; color: var(--emerald-deep); font-weight: 600; box-shadow: 0 1px 2px rgba(16, 42, 35, .08); }
+/* 收藏 / 置顶按钮选中态：与首页卡片的配色保持一致 */
+.dashboard-page .icon-btn.pref-on { border-color: #f0c58c; background: var(--amber-soft); color: #b45309; }
+.dashboard-page .icon-btn.pin-on { border-color: #b8dacf; background: var(--brand-soft); color: var(--brand); }
 @media (max-width: 640px) {
   .view-tabs { width: 100%; }
   .view-tabs button { flex: 1; justify-content: center; }

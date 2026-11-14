@@ -30,6 +30,7 @@ type Dependencies struct {
 	User       *handler.UserHandler
 	Dataset    *handler.DatasetHandler
 	Dashboard  *handler.DashboardHandler
+	Pref       *handler.DashboardPreferenceHandler
 	Template   *handler.TemplateHandler
 	Share      *handler.ShareHandler
 	Push       *handler.PushHandler
@@ -126,6 +127,11 @@ func New(deps Dependencies) *gin.Engine {
 		secured.PUT("/dashboards/:id", middleware.RequirePermission("dashboard:create"), deps.Dashboard.Update)
 		secured.DELETE("/dashboards/:id", middleware.RequirePermission("dashboard:create"), deps.Dashboard.Delete)
 		secured.POST("/dashboards/:id/duplicate", middleware.RequirePermission("dashboard:create"), deps.Dashboard.Duplicate)
+
+		// 看板个人偏好：收藏 / 置顶 / 最近浏览（仅影响当前账号自己的首页排序）
+		secured.GET("/dashboard-prefs", deps.Pref.List)
+		secured.PUT("/dashboard-prefs/:id", deps.Pref.Update)
+		secured.POST("/dashboard-prefs/:id/view", deps.Pref.Touch)
 
 		// 模板
 		secured.GET("/templates", deps.Template.List)

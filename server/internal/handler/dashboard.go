@@ -23,11 +23,12 @@ type DashboardHandler struct {
 	service *service.DashboardService
 	repo    *repository.DashboardRepository
 	scope   *service.ScopeService
+	pref    *service.DashboardPreferenceService
 }
 
 // NewDashboardHandler 创建看板处理器。
-func NewDashboardHandler(service *service.DashboardService, repo *repository.DashboardRepository, scope *service.ScopeService) *DashboardHandler {
-	return &DashboardHandler{service: service, repo: repo, scope: scope}
+func NewDashboardHandler(service *service.DashboardService, repo *repository.DashboardRepository, scope *service.ScopeService, pref *service.DashboardPreferenceService) *DashboardHandler {
+	return &DashboardHandler{service: service, repo: repo, scope: scope, pref: pref}
 }
 
 // List 查询当前用户可见的看板列表（按发布状态、角色、组织范围过滤）。
@@ -51,6 +52,8 @@ func (h *DashboardHandler) List(c *gin.Context) {
 			result = append(result, item)
 		}
 	}
+	// 合并收藏 / 置顶 / 最近浏览等个人偏好，前端首页据此排序与分区展示
+	h.applyPreferences(user.ID, result)
 	response.OK(c, result)
 }
 
@@ -71,6 +74,10 @@ func (h *DashboardHandler) Get(c *gin.Context) {
 		response.Forbidden(c, "看板尚未发布")
 		return
 	}
+	// 详情页同样带回个人偏好，用于渲染收藏按钮的初始状态
+	single := []service.DashboardView{*item}
+	h.applyPreferences(middleware.CurrentUser(c).ID, single)
+	*item = single[0]
 	response.OK(c, item)
 }
 
@@ -129,6 +136,10 @@ func (h *DashboardHandler) Delete(c *gin.Context) {
 	if err := h.service.Delete(id); err != nil {
 		response.BadRequest(c, err.Error())
 		return
+	}
+	// 清理所有用户对该看板的收藏 / 浏览记录，避免残留孤立数据
+	if h.pref != nil {
+		_ = h.pref.DeleteByDashboard(id)
 	}
 	response.OK(c, gin.H{"deleted": true})
 }
@@ -235,6 +246,26 @@ func (h *DashboardHandler) authorizedDashboard(c *gin.Context, id uint64) (*mode
 		orgIDs = service.DashboardQueryOrgIDs(dashboard, scope, all)
 	}
 	return dashboard, orgIDs, true
+}
+
+// applyPreferences 把当前用户的看板偏好合并进视图列表（原地修改）。
+// 偏好读取失败时不影响看板展示，仅退化为无收藏状态。
+func (h *DashboardHandler) applyPreferences(userID uint64, items []service.DashboardView) {
+	if h.pref == nil || len(items) == 0 {
+		return
+	}
+	prefs, err := h.pref.Map(userID)
+	if err != nil {
+		return
+	}
+	for i := range items {
+		if pref, ok := prefs[items[i].ID]; ok {
+			items[i].Favorite = pref.Favorite
+			items[i].Pinned = pref.Pinned
+			items[i].ViewCount = pref.ViewCount
+			items[i].LastViewedAt = pref.LastViewedAt
+		}
+	}
 }
 
 func exportFileName(name, ext string) string {

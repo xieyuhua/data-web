@@ -148,6 +148,20 @@ type Template struct {
 	UpdatedAt   time.Time `json:"updated_at"`
 }
 
+// DashboardPreference 用户对看板的个人偏好：收藏、置顶与最近浏览记录。
+// 同一用户 + 同一看板只有一条记录（复合唯一索引），多端登录共享同一份偏好。
+type DashboardPreference struct {
+	ID           uint64     `json:"id" gorm:"primaryKey"`
+	UserID       uint64     `json:"user_id" gorm:"uniqueIndex:idx_pref_user_dashboard;not null"`
+	DashboardID  uint64     `json:"dashboard_id" gorm:"uniqueIndex:idx_pref_user_dashboard;not null"`
+	Favorite     bool       `json:"favorite" gorm:"default:false;index"` // 是否收藏
+	Pinned       bool       `json:"pinned" gorm:"default:false;index"`   // 是否置顶
+	ViewCount    int        `json:"view_count" gorm:"default:0"`         // 累计打开次数
+	LastViewedAt *time.Time `json:"last_viewed_at"`                      // 最近一次打开时间
+	CreatedAt    time.Time  `json:"created_at"`
+	UpdatedAt    time.Time  `json:"updated_at"`
+}
+
 type PushTemplate struct {
 	ID              uint64    `json:"id" gorm:"primaryKey"`
 	Name            string    `json:"name" gorm:"size:100;not null"`
@@ -318,5 +332,6 @@ func AllModels() []any {
 		&PushTemplate{}, &ChannelConfig{}, &Subscription{}, &PushRecord{},
 		&ShareLink{}, &AuditLog{}, &SalesFact{}, &Datasource{}, &Target{},
 		&Employee{}, &EmployeeSale{}, &WecomSyncConfig{}, &WecomSyncJob{},
+		&DashboardPreference{},
 	}
 }
