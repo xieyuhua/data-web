@@ -1,0 +1,20 @@
+# binaries
+bi.exe
+bi
+*.exe
+
+# runtime data
+data/*.db
+data/*.db-*
+data/sample.db
+data/demo_sales.db
+data/demo_sales.db-*
+data/reports/
+config.yaml
+
+# frontend
+web/node_modules/
+internal/webui/dist/assets/
+
+# local dev artifacts
+.shots/

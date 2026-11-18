@@ -1,0 +1,175 @@
+:root {
+  --bi-bg: #f5f7fa;
+  --bi-card: #ffffff;
+  --bi-border: #ebeef5;
+  --bi-text: #1f2d3d;
+  --bi-muted: #909399;
+  --bi-gap: 16px;
+  --bi-radius: 8px;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#app {
+  height: 100%;
+  margin: 0;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+  background: var(--bi-bg);
+  -webkit-text-size-adjust: 100%;
+}
+
+/* ---------- Generic building blocks ---------- */
+
+.page-card {
+  background: var(--bi-card);
+  border-radius: var(--bi-radius);
+  padding: var(--bi-gap);
+}
+
+.page-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-bottom: var(--bi-gap);
+}
+
+.page-title {
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--bi-text);
+}
+
+.muted {
+  color: var(--bi-muted);
+  font-size: 12px;
+}
+
+.flex {
+  display: flex;
+  align-items: center;
+}
+
+.flex-gap {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+/* Tables keep readable columns on narrow screens instead of squashing. */
+.table-scroll {
+  width: 100%;
+  overflow-x: auto;
+}
+
+.table-scroll .el-table {
+  min-width: 680px;
+}
+
+/* Responsive 2/3/4 column card grids. */
+.resp-grid {
+  display: grid;
+  gap: var(--bi-gap);
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.resp-grid--3 {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+/* Wide dialogs shrink with the viewport. */
+.el-dialog {
+  max-width: calc(100vw - 32px);
+}
+
+.el-message-box {
+  max-width: calc(100vw - 32px);
+}
+
+/* ---------- Breakpoints ---------- */
+
+@media (max-width: 1200px) {
+  .resp-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 900px) {
+  :root {
+    --bi-gap: 12px;
+  }
+  .resp-grid,
+  .resp-grid--3 {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .page-title {
+    font-size: 16px;
+  }
+}
+
+@media (max-width: 640px) {
+  :root {
+    --bi-gap: 10px;
+  }
+  /* Element Plus inputs default to a 220px min-width which overflows narrow
+     viewports; allow them to shrink inside cards and dialogs. */
+  .el-input,
+  .el-select,
+  .el-date-editor,
+  .el-input-number,
+  .el-textarea,
+  .el-form,
+  .el-form-item,
+  .el-form-item__content {
+    min-width: 0 !important;
+    max-width: 100%;
+  }
+  .el-input__wrapper {
+    min-width: 0;
+  }
+  .resp-grid,
+  .resp-grid--3 {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .page-card {
+    padding: 12px;
+  }
+  .page-header {
+    margin-bottom: 12px;
+  }
+  /* Dialogs go near-fullscreen on phones. */
+  .el-dialog {
+    width: calc(100vw - 16px) !important;
+    margin: 8px auto !important;
+  }
+  .el-dialog__body {
+    padding: 12px;
+  }
+  .el-dialog__header,
+  .el-dialog__footer {
+    padding-left: 12px;
+    padding-right: 12px;
+  }
+  .el-form-item {
+    margin-bottom: 14px;
+  }
+  .el-form-item__label {
+    padding-right: 8px;
+  }
+  .table-scroll .el-table {
+    min-width: 560px;
+  }
+}
+
+/* Full-screen dashboard preview on phones should not nest scrollbars. */
+@media (max-width: 768px) {
+  .el-overlay-dialog {
+    overflow: auto;
+  }
+}

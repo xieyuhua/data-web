@@ -1,0 +1,71 @@
+# Biaoge BI 配置示例。复制为 config.yaml 后按需修改。
+# 数据源支持：MySQL / PostgreSQL / Oracle（纯 Go go-ora 驱动）/ SQLite
+# 所有键均可通过环境变量覆盖，前缀 BI_，例如 BI_SERVER_PORT、BI_AUTH_JWTSECRET。
+server:
+  port: 2345
+  corsOrigins:
+    - http://localhost:5173
+    - http://127.0.0.1:5173
+  readTimeoutSec: 60
+  bodyLimitMB: 5
+  requestLogging: true
+
+metadata:
+  # sqlite | mysql
+  driver: sqlite
+  dsn: "data/bi.db?_pragma=busy_timeout(5000)&_pragma=journal_mode(WAL)&_pragma=foreign_keys(1)"
+  # MySQL 示例：
+  # driver: mysql
+  # dsn: "root:password@tcp(127.0.0.1:3306)/biaoge_bi?charset=utf8mb4&parseTime=True&loc=Local"
+
+auth:
+  # 必须至少 32 字节；生产环境务必修改（或设置 BI_AUTH_JWTSECRET）
+  jwtSecret: "please-change-this-to-a-random-32-byte-secret"
+  tokenTTLHours: 12
+  adminUsername: admin
+  # 留空则首次启动随机生成并输出到日志一次
+  adminPassword: ""
+
+security:
+  # 数据源密码加密密钥；留空则由 jwtSecret 派生（保持一致即可跨重启解密）
+  secretKey: ""
+
+datasource:
+  maxOpen: 5
+  maxIdle: 2
+  queryTimeoutSec: 15
+  maxResultRows: 5000
+
+cache:
+  ttlSeconds: 60
+  maxEntries: 500
+
+smtp:
+  enabled: false
+  host: ""
+  port: 587
+  username: ""
+  password: ""
+  tlsMode: starttls   # none | starttls | ssl
+  from: "bi@example.com"
+
+scheduler:
+  enabled: true
+  reportDir: data/reports
+  retentionDays: 30
+
+logging:
+  level: info        # debug | info | warn | error
+
+# 企业微信集成（OAuth 扫码登录 + 通讯录同步 + 按部门下发看板）
+wecom:
+  enabled: false
+  corpId: ""                 # 企业 ID（我的企业 → 企业信息）
+  agentId: 0                 # 自建应用 AgentId
+  secret: ""                 # 自建应用 Secret（用于登录）
+  contactSecret: ""          # 通讯录同步 Secret（留空则复用 secret，需具备通讯录读取权限）
+  redirectUri: "http://localhost:2345/wecom/callback"   # 应用可信域名内地址
+  apiBase: "https://qyapi.weixin.qq.com"                 # 私有化部署可改
+  autoCreateUser: true       # 员工首次扫码自动开通账号
+  superAdminIds: []          # 企业微信 userid 白名单，自动授予管理员
+  syncIntervalHours: 12      # 通讯录定时同步间隔（0 关闭）
